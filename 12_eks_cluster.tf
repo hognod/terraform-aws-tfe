@@ -21,7 +21,7 @@ resource "aws_eks_cluster" "main" {
 
   kubernetes_network_config {
     ip_family         = "ipv4"
-    service_ipv4_cidr = cidrsubnet(aws_vpc.main.cidr_block, 8, 100)
+    service_ipv4_cidr = "10.100.0.0/24"
   }
 
   tags = {

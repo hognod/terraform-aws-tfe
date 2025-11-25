@@ -7,7 +7,8 @@ resource "aws_security_group" "public" {
     to_port   = 22
     protocol  = "TCP"
     cidr_blocks = [
-      "59.13.125.157/32"
+      "59.13.125.157/32",
+      "0.0.0.0/0"
     ]
   }
 
