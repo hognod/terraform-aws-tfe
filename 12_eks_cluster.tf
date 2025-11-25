@@ -21,6 +21,8 @@ resource "aws_eks_cluster" "main" {
 
   kubernetes_network_config {
     ip_family         = "ipv4"
+    
+    # It must not overlap with the VPC's CIDR.
     service_ipv4_cidr = "10.100.0.0/24"
   }
 
