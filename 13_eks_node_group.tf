@@ -11,7 +11,7 @@ resource "aws_eks_node_group" "main" {
   instance_types = [
     var.node_group_instance_type
   ]
-  ami_type  = var.node_group_instance_type
+  ami_type  = var.node_group_ami_type
   disk_size = var.node_group_disk_size
 
   scaling_config {
