@@ -23,17 +23,17 @@ resource "aws_iam_role" "eks_cluster" {
 }
 
 resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
-  policy_arn = "arn:${data.aws_partition.current.partition}:iam:aws:policy/AmazonEKSClusterPolicy"
+  policy_arn = "arn:${data.aws_partition.current.partition}:iam::aws:policy/AmazonEKSClusterPolicy"
   role       = aws_iam_role.eks_cluster.name
 }
 
 resource "aws_iam_role_policy_attachment" "eks_service_policy" {
-  policy_arn = "arn:${data.aws_partition.current.partition}:iam:aws:policy/AmazonEKSServicePolicy"
+  policy_arn = "arn:${data.aws_partition.current.partition}:iam::aws:policy/AmazonEKSServicePolicy"
   role       = aws_iam_role.eks_cluster.name
 }
 
 resource "aws_iam_role_policy_attachment" "eks_vpc_resource_controller_policy" {
-  policy_arn = "arn:${data.aws_partition.current.partition}:iam:aws:policy/AmazonEKSVPCResourceController"
+  policy_arn = "arn:${data.aws_partition.current.partition}:iam::aws:policy/AmazonEKSVPCResourceController"
   role       = aws_iam_role.eks_cluster.name
 }
 
