@@ -1,5 +1,5 @@
 variable "ami_id" {
-  type = string
+  type        = string
   description = <<-EOT
     UbuntuOS only
 
@@ -9,7 +9,7 @@ variable "ami_id" {
 }
 
 variable "os_user" {
-  type = string
+  type    = string
   default = "ubuntu"
 }
 
@@ -19,6 +19,11 @@ variable "instance_type" {
 
 variable "volume_size" {
   type = string
+}
+
+//eks node group
+variable "node_group_instance_type" {
+  type    = string
 }
 
 //variables sets
