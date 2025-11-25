@@ -23,7 +23,15 @@ variable "volume_size" {
 
 //eks node group
 variable "node_group_instance_type" {
-  type    = string
+  type = string
+}
+
+variable "node_group_ami_type" {
+  type = string
+}
+
+variable "node_group_disk_size" {
+  type = string
 }
 
 //variables sets

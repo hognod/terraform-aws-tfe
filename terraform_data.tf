@@ -17,6 +17,7 @@ resource "terraform_data" "public" {
       "aws configure set aws_access_key_id ${var.access_key}",
       "aws configure set aws_secret_access_key ${var.secret_key}",
       "aws configure set region ap-northeast-2",
+      "aws eks update-kubeconfig --region ${var.region} --name ${aws_eks_cluster.main.name}",
       # kubectl install
       "curl -LO \"https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl\"",
       "sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl",
@@ -25,7 +26,7 @@ resource "terraform_data" "public" {
       "chmod 700 get_helm.sh",
       "./get_helm.sh",
 
-      "echo alias k=\"kubectl\""
+      "echo 'alias k=\"kubectl\"' >> ~/.bashrc"
     ]
   }
 }
