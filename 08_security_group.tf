@@ -1,3 +1,4 @@
+# Instance
 resource "aws_security_group" "public" {
   name   = "hognod-public"
   vpc_id = aws_vpc.main.id
@@ -7,7 +8,6 @@ resource "aws_security_group" "public" {
     to_port   = 22
     protocol  = "TCP"
     cidr_blocks = [
-      "59.13.125.157/32",
       "0.0.0.0/0"
     ]
   }
@@ -45,6 +45,7 @@ resource "aws_security_group" "public" {
   }
 }
 
+# EKS
 resource "aws_security_group" "eks-cluster" {
   name   = "hognod-eks-cluster"
   vpc_id = aws_vpc.main.id
@@ -60,5 +61,25 @@ resource "aws_security_group" "eks-cluster" {
 
   tags = {
     Name = "hognod-eks-cluster"
+  }
+}
+
+# Ealsticache
+resource "aws_security_group" "ealsticache" {
+  name = "hognod-elasticache"
+  vpc_id = aws_vpc.main.id
+
+  ingress {
+    from_port = 6379
+    to_port = 6379
+    protocol = "TCP"
+    cidr_blocks = [
+      aws_subnet.private-a.cidr_block,
+      aws_subnet.private-b.cidr_block
+    ]
+  }
+
+  tags = {
+    Name = "hognod-elasticache"
   }
 }

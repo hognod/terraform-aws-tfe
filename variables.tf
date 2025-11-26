@@ -34,6 +34,11 @@ variable "node_group_disk_size" {
   type = string
 }
 
+//elasticache
+variable "elasticache_node_type" {
+  type = string
+}
+
 //variables sets
 variable "access_key" {
   type = string
