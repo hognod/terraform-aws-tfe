@@ -113,3 +113,40 @@ resource "aws_iam_role" "irsa" {
     Name = "hognod-irsa-role"
   }
 }
+
+data "aws_iam_policy_document" "lb_controller_irsa_assume_role" {
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+
+    principals {
+      type        = "Federated"
+      identifiers = [
+        aws_iam_openid_connect_provider.main.arn
+      ]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "${replace("${aws_iam_openid_connect_provider.main.arn}", "/^(.*provider/)/", "")}:sub"
+      values   = ["system:serviceaccount:${var.tfe_lb_controller_kube_namespace}:${var.tfe_lb_controller_kube_svc_account}"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "${replace("${aws_iam_openid_connect_provider.main.arn}", "/^(.*provider/)/", "")}:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "lb_controller_irsa" {
+  name = "hognod-lb-controller-irsa-role"
+  path = "/"
+
+  assume_role_policy = data.aws_iam_policy_document.lb_controller_irsa_assume_role.json
+
+  tags = {
+    Name = "hognod-lb-controller-irsa-role"
+  }
+}
