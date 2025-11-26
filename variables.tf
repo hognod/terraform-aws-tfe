@@ -39,6 +39,27 @@ variable "elasticache_node_type" {
   type = string
 }
 
+//rds
+variable "db_engine_version" {
+  type = string
+}
+
+variable "db_instance_class" {
+  type = string
+}
+
+variable "db_storage_size" {
+  type = string
+}
+
+variable "db_username" {
+  type = string
+}
+
+variable "db_password" {
+  type = string
+}
+
 //variables sets
 variable "access_key" {
   type = string

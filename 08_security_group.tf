@@ -64,15 +64,15 @@ resource "aws_security_group" "eks-cluster" {
   }
 }
 
-# Ealsticache
+# Elasticache
 resource "aws_security_group" "ealsticache" {
-  name = "hognod-elasticache"
+  name   = "hognod-elasticache"
   vpc_id = aws_vpc.main.id
 
   ingress {
     from_port = 6379
-    to_port = 6379
-    protocol = "TCP"
+    to_port   = 6379
+    protocol  = "TCP"
     cidr_blocks = [
       aws_subnet.private-a.cidr_block,
       aws_subnet.private-b.cidr_block
@@ -81,5 +81,24 @@ resource "aws_security_group" "ealsticache" {
 
   tags = {
     Name = "hognod-elasticache"
+  }
+}
+
+#RDS
+resource "aws_security_group" "rds" {
+  name = "hognod-rds"
+
+  ingress {
+    from_port = 5432
+    to_port   = 5432
+    protocol  = "TCP"
+    cidr_blocks = [
+      aws_subnet.private-a.cidr_block,
+      aws_subnet.private-b.cidr_block
+    ]
+  }
+
+  tags = {
+    Name = "hognod-rds"
   }
 }
