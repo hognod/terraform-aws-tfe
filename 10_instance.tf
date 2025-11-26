@@ -1,10 +1,10 @@
 resource "aws_instance" "public" {
-  ami           = var.ami_id
+  ami           = var.instance_ami_id
   instance_type = var.instance_type
   key_name      = aws_key_pair.main.key_name
 
   root_block_device {
-    volume_size = var.volume_size
+    volume_size = var.instance_volume_size
   }
 
   subnet_id              = aws_subnet.public-a.id

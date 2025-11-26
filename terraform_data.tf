@@ -1,7 +1,7 @@
 resource "terraform_data" "public" {
   connection {
     host        = aws_instance.public.public_ip
-    user        = var.os_user
+    user        = var.instance_user
     private_key = tls_private_key.main.private_key_pem
 
     timeout = "2m"

@@ -36,8 +36,7 @@ resource "aws_db_instance" "main" {
 
   performance_insights_enabled = false
 
-  enabled_cloudwatch_logs_exports = false
-  monitoring_interval             = 0 # 0: disabled
+  monitoring_interval = 0 # 0: disabled
 
   backup_retention_period = 0
   skip_final_snapshot     = true

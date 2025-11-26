@@ -1,4 +1,4 @@
-variable "ami_id" {
+variable "instance_ami_id" {
   type        = string
   description = <<-EOT
     UbuntuOS only
@@ -8,7 +8,7 @@ variable "ami_id" {
   EOT
 }
 
-variable "os_user" {
+variable "instance_user" {
   type    = string
   default = "ubuntu"
 }
@@ -17,7 +17,7 @@ variable "instance_type" {
   type = string
 }
 
-variable "volume_size" {
+variable "instance_volume_size" {
   type = string
 }
 
