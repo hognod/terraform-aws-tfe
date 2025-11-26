@@ -79,7 +79,7 @@ resource "aws_iam_role_policy_attachment" "eks_node_group_container_registry_rea
 # IRSA
 
 output "test" {
-  value = aws_eks_cluster.main.identity.oidc[0].issuer
+  value = aws_eks_cluster.main.identity[0].oidc[0].issuer
 }
 
 # data "aws_iam_policy_document" "irsa_assume_role" {
