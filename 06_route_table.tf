@@ -42,6 +42,11 @@ resource "aws_route_table" "private-b" {
     gateway_id = "local"
   }
 
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.main.id
+  }
+
   tags = {
     Name = "hognod-private-rtb-b"
   }
