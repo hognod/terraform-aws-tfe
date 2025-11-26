@@ -75,3 +75,23 @@ resource "aws_iam_role_policy_attachment" "eks_node_group_container_registry_rea
   policy_arn = "arn:${data.aws_partition.current.partition}:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
   role       = aws_iam_role.eks_node_group.name
 }
+
+# IRSA
+
+output "test" {
+  value = aws_eks_cluster.main.oidc
+}
+
+# data "aws_iam_policy_document" "irsa_assume_role" {
+#   statement {
+#     effect = "Allow"
+#     actions = ["sts:AssumeRoleWithWebIdentity"]
+
+#     principals {
+#       type = "Federated"
+#       identifiers = [
+#         aws_eks_cluster.main
+#       ]
+#     }
+#   }
+# }
