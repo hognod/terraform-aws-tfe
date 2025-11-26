@@ -77,21 +77,39 @@ resource "aws_iam_role_policy_attachment" "eks_node_group_container_registry_rea
 }
 
 # IRSA
+data "aws_iam_policy_document" "irsa_assume_role" {
+  statement {
+    effect = "Allow"
+    actions = ["sts:AssumeRoleWithWebIdentity"]
 
-output "test" {
-  value = aws_eks_cluster.main.identity[0].oidc[0].issuer
+    principals {
+      type = "Federated"
+      identifiers = [
+        aws_iam_openid_connect_provider.main.arn
+      ]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "${replace("${aws_iam_openid_connect_provider.main.arn}", "/^(.*provider/)/", "")}:sub"
+      values   = ["system:serviceaccount:${var.tfe_kube_namespace}:${var.tfe_kube_svc_account}"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "${replace("${aws_iam_openid_connect_provider.main.arn}", "/^(.*provider/)/", "")}:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+  }
 }
 
-# data "aws_iam_policy_document" "irsa_assume_role" {
-#   statement {
-#     effect = "Allow"
-#     actions = ["sts:AssumeRoleWithWebIdentity"]
+resource "aws_iam_role" "irsa" {
+  name = "hognod-irsa-role"
+  path = "/"
 
-#     principals {
-#       type = "Federated"
-#       identifiers = [
-#         aws_eks_cluster.main
-#       ]
-#     }
-#   }
-# }
+  assume_role_policy = data.aws_iam_policy_document.irsa_assume_role.json
+
+  tags = {
+    Name = "hognod-irsa-role"
+  }
+}

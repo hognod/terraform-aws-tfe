@@ -1,3 +1,9 @@
+//variables sets
+variable "access_key" {}
+variable "secret_key" {}
+variable "region" {}
+
+# Instance
 variable "instance_ami_id" {
   type        = string
   description = <<-EOT
@@ -60,15 +66,11 @@ variable "db_password" {
   type = string
 }
 
-//variables sets
-variable "access_key" {
+# tfe
+variable "tfe_kube_namespace" {
   type = string
 }
 
-variable "secret_key" {
-  type = string
-}
-
-variable "region" {
-  type = string
+variable "tfe_kube_svc_account" {
+ type = string 
 }
