@@ -86,7 +86,7 @@ resource "aws_security_group" "ealsticache" {
 
 #RDS
 resource "aws_security_group" "rds" {
-  name = "hognod-rds"
+  name   = "hognod-rds"
   vpc_id = aws_vpc.main.id
 
   ingress {
