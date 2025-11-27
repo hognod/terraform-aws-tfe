@@ -114,7 +114,7 @@ resource "aws_iam_role" "irsa" {
   }
 }
 
-
+//////////
 data "aws_iam_policy_document" "workload_identity_s3" {
   statement {
     effect = "Allow"
@@ -185,4 +185,48 @@ resource "aws_iam_role" "lb_controller_irsa" {
   tags = {
     Name = "hognod-lb-controller-irsa-role"
   }
+}
+
+//////////
+data "aws_iam_policy_document" "lb_controller_irsa_policy_doc" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "iam:CreateServiceLinkedRole"
+    ]
+    resources = ["*"]
+    condition {
+      test     = "StringEquals"
+      variable = "iam:AWSServiceName"
+      values   = ["elasticloadbalancing.amazonaws.com"]
+    }
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "ec2:DescribeAccountAttributes",
+      "ec2:DescribeAddresses",
+      "ec2:DescribeAvailabilityZones",
+      "ec2:DescribeInternetGateways",
+      "ec2:DescribeVpcs",
+      "ec2:DescribeVpcPeeringConnections",
+      "ec2:DescribeSubnets",
+      "ec2:DescribeSecurityGroups",
+      "ec2:DescribeInstances",
+      "ec2:DescribeNetworkInterfaces",
+      "ec2:DescribeTags"
+    ]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_policy" "lb_controller_irsa_policy" {
+  name        = "hognod-lb-controller-irsa-policy"
+  policy      = data.aws_iam_policy_document.aws_load_balancer_controller_policy.json
+}
+
+resource "aws_iam_role_policy_attachment" "lb_controller_irsa_role_policy_attachment" {
+  role       = aws_iam_role.lb_controller_irsa.name
+  policy_arn = aws_iam_policy.lb_controller_irsa_policy.arn
 }
