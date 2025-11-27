@@ -76,7 +76,7 @@ variable "tfe_kube_namespace" {
 }
 
 variable "tfe_kube_svc_account" {
- type = string 
+  type = string
 }
 
 variable "tfe_lb_controller_kube_namespace" {

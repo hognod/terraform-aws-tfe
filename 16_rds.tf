@@ -24,7 +24,7 @@ resource "aws_db_instance" "main" {
 
   multi_az = false
 
-  db_name = var.db_name
+  db_name  = var.db_name
   username = var.db_username
   password = var.db_password
   port     = 5432
