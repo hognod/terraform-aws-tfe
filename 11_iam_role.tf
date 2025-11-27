@@ -223,7 +223,7 @@ data "aws_iam_policy_document" "lb_controller_irsa_policy_doc" {
 
 resource "aws_iam_policy" "lb_controller_irsa_policy" {
   name        = "hognod-lb-controller-irsa-policy"
-  policy      = data.aws_iam_policy_document.aws_load_balancer_controller_policy.json
+  policy      = data.aws_iam_policy_document.lb_controller_irsa_policy_doc.json
 }
 
 resource "aws_iam_role_policy_attachment" "lb_controller_irsa_role_policy_attachment" {
