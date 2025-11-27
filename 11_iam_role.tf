@@ -233,6 +233,14 @@ data "aws_iam_policy_document" "lb_controller_irsa_policy_doc" {
     ]
     resources = ["*"]
   }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "ec2:CreateSecurityGroup"
+    ]
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_policy" "lb_controller_irsa_policy" {
