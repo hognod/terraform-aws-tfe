@@ -114,6 +114,42 @@ resource "aws_iam_role" "irsa" {
   }
 }
 
+
+data "aws_iam_policy_document" "workload_identity_s3" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:PutObject",
+      "s3:ListBucket",
+      "s3:GetObject",
+      "s3:DeleteObject",
+      "s3:GetBucketLocation"
+    ]
+    resources = [
+      "${aws_s3_bucket.main.arn}",
+      "${aws_s3_bucket.main.arn}/*"
+    ]
+  }
+}
+
+data "aws_iam_policy_document" "workload_identity_combined" {
+  source_policy_documents = [
+    data.aws_iam_policy_document.workload_identity_s3.json
+  ]
+}
+
+resource "aws_iam_policy" "workload_identity" {
+  name        = "hognod-irsa-workload-policy"
+  policy      = data.aws_iam_policy_document.workload_identity_combined.json
+}
+
+resource "aws_iam_role_policy_attachment" "irsa_role_policy_attachment" {
+  role       = aws_iam_role.irsa.name
+  policy_arn = aws_iam_policy.workload_identity.arn
+}
+
+
+# IRSA for aws_lb_controller
 data "aws_iam_policy_document" "lb_controller_irsa_assume_role" {
   statement {
     effect  = "Allow"
