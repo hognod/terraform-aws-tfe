@@ -34,7 +34,9 @@ resource "terraform_data" "public" {
       ## aws load balancer controller install
       "helm repo add eks https://aws.github.io/eks-charts",
       "helm repo update eks",
-      "helm install aws-load-balancer-controller eks/aws-load-balancer-controller --namespace ${var.tfe_lb_controller_kube_namespace} --set clusterName=${aws_eks_cluster.main.name} --set serviceAccount.create=true --set serviceAccount.name=${var.tfe_kube_svc_account} --set serviceAccount.annotations.\"eks\\.amazonaws\\.com/role-arn\"=${aws_iam_role.lb_controller_irsa.arn} --set region=${var.region} --set vpcId=${aws_vpc.main.id}"
+      "helm install aws-load-balancer-controller eks/aws-load-balancer-controller --namespace ${var.tfe_lb_controller_kube_namespace} --set clusterName=${aws_eks_cluster.main.name} --set serviceAccount.create=true --set serviceAccount.name=${var.tfe_lb_controller_kube_svc_account} --set serviceAccount.annotations.\"eks\\.amazonaws\\.com/role-arn\"=${aws_iam_role.lb_controller_irsa.arn} --set region=${var.region} --set vpcId=${aws_vpc.main.id}",
+
+      "kubectl create namespace ${var.tfe_kube_namespace}"
     ]
   }
 }
