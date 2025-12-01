@@ -47,6 +47,7 @@ resource "aws_security_group" "windows" {
     to_port   = 0
     protocol  = "-1"
     cidr_blocks = [
+      "0.0.0.0/0",
       aws_subnet.public-a.cidr_block,
       aws_subnet.private-a.cidr_block,
       aws_subnet.private-b.cidr_block
