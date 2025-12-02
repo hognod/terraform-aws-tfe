@@ -1,3 +1,105 @@
+locals {
+  values_yaml = {
+    replicaCount = 2
+
+    tls = {
+      certificateSecret = "tfe-certs"
+      caCertData = base64encode(file("./cert/bundle.pem"))
+    }
+
+    image = {
+      repository = "images.releases.hashicorp.com"
+      name       = "hashicorp/terraform-enterprise"
+      tag        = "v202507-1"
+    }
+
+    serviceAccount = {
+      enabled = true
+      name    = var.tfe_kube_svc_account
+      annotations = {
+        "eks.amazonaws.com/role-arn" = aws_iam_role.irsa.arn
+      }
+    }
+
+    tfe = {
+      privateHttpPort  = 8080
+      privateHttpsPort = 8443
+      metrics = {
+        enable    = false
+        httpPort  = 9090
+        httpsPort = 9091
+      }
+    }
+
+    service = {
+      annotations = {
+        "service.beta.kubernetes.io/aws-load-balancer-type"             = "nlb"
+        "service.beta.kubernetes.io/aws-load-balancer-backend-protocol" = "tcp"
+        "service.beta.kubernetes.io/aws-load-balancer-scheme"           = "internal"
+        "service.beta.kubernetes.io/aws-load-balancer-subnets"          = "${aws_subnet.private-a.id},${aws_subnet.private-b.id}"
+        "service.beta.kubernetes.io/aws-load-balancer-security-groups"  = ""
+      }
+      type = "LoadBalancer"
+      port = 443
+    }
+
+    env = {
+      secretRefs = [
+        {
+          name = "tfe-secrets"
+        }
+      ]
+      
+      variables = {
+        # TFE configuration settings
+        TFE_HOSTNAME = var.tfe_hostname
+        
+        # Database settings
+        TFE_DATABASE_HOST       = aws_db_instance.main.endpoint
+        TFE_DATABASE_NAME       = var.db_name
+        TFE_DATABASE_USER       = var.db_username
+        TFE_DATABASE_PARAMETERS = "sslmode=require"
+        
+        # Object storage settings
+        TFE_OBJECT_STORAGE_TYPE                           = "s3"
+        TFE_OBJECT_STORAGE_S3_BUCKET                      = aws_s3_bucket.main.id
+        TFE_OBJECT_STORAGE_S3_REGION                      = var.region
+        TFE_OBJECT_STORAGE_S3_USE_INSTANCE_PROFILE        = "true"
+        TFE_OBJECT_STORAGE_S3_SERVER_SIDE_ENCRYPTION      = "AES256"
+        TFE_OBJECT_STORAGE_S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID = ""
+        
+        # Redis settings
+        TFE_REDIS_HOST    = "hognod-elasticache.z6xkgh.0001.apn2.cache.amazonaws.com:6379"#################################################
+        TFE_REDIS_USE_AUTH = "false"
+        TFE_REDIS_USE_TLS  = "false"
+      }
+    }
+
+    resources = {
+      requests = {
+        memory = "8192Mi"
+        cpu    = "2000m"
+      }
+    }
+
+    agentWorkerPodTemplate = {
+      spec = {
+        containers = [
+          {
+            name = "terraform-enterprise-agent"
+            resources = {
+              requests = {
+                cpu    = "2000m"
+                memory = "4Gi"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+
 resource "terraform_data" "public" {
   connection {
     host        = aws_instance.public.public_ip
@@ -7,8 +109,16 @@ resource "terraform_data" "public" {
     timeout = "2m"
   }
 
+  provisioner "file" {
+    source = "./cert"
+    destination = "/tmp"
+  }
+
   provisioner "remote-exec" {
     inline = [
+      "cp -r /tmp/cert ~/cert",
+
+      "echo ${local.values_yaml} > test.yaml",
       "echo ${var.tfe_license} > terraform.hclic",
       # aws cli install
       "curl \"https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip\" -o \"awscliv2.zip\"",
