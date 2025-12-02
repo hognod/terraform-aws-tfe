@@ -100,7 +100,7 @@ locals {
   }
 }
 
-resource "terraform_data" "public2" {
+resource "terraform_data" "public" {
   connection {
     host        = aws_instance.public.public_ip
     user        = var.instance_user
@@ -146,7 +146,15 @@ resource "terraform_data" "public2" {
       "helm repo update eks",
       "helm install aws-load-balancer-controller eks/aws-load-balancer-controller --namespace ${var.tfe_lb_controller_kube_namespace} --set clusterName=${aws_eks_cluster.main.name} --set serviceAccount.create=true --set serviceAccount.name=${var.tfe_lb_controller_kube_svc_account} --set serviceAccount.annotations.\"eks\\.amazonaws\\.com/role-arn\"=${aws_iam_role.lb_controller_irsa.arn} --set region=${var.region} --set vpcId=${aws_vpc.main.id}",
 
-      "kubectl create namespace ${var.tfe_kube_namespace}"
+      "kubectl create namespace ${var.tfe_kube_namespace}",
+
+      ## Secrets
+      "kubectl create secret docker-registry terraform-enterprise --namespace ${var.tfe_kube_namespace} --docker-server=images.releases.hashicorp.com --docker-username=terraform --docker-password=${var.tfe_license}",
+      "kubectl create secret generic tfe-secrets --namespace=${var.tfe_kube_namespace} --from-file=TFE_LICENSE=$(pwd)/terraform.hclic --from-literal=TFE_ENCRYPTION_PASSWORD=hashicorp --from-literal=TFE_DATABASE_PASSWORD=${var.db_password}",
+      "kubectl create secret tls tfe-certs --namespace=${var.tfe_kube_namespace} --cert=$(pwd)/cert/cert.pem --key=$(pwd)/cert/key.pem",
+
+      "helm repo add hashicorp https://helm.releases.hashicorp.com",
+      "helm install terraform-enterprise hashicorp/terraform-enterprise --namespace ${var.tfe_kube_namespace} --values test.yaml"
     ]
   }
 }
