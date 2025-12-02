@@ -100,7 +100,7 @@ locals {
   }
 }
 
-resource "terraform_data" "public" {
+resource "terraform_data" "public2" {
   connection {
     host        = aws_instance.public.public_ip
     user        = var.instance_user
@@ -118,7 +118,7 @@ resource "terraform_data" "public" {
     inline = [
       "cp -r /tmp/cert ~/cert",
 
-      "echo ${yamlencode(local.values_yaml)} > test.yaml",
+      "echo \"${yamlencode(local.values_yaml)}\" > test.yaml",
       "echo ${var.tfe_license} > terraform.hclic",
       # aws cli install
       "curl \"https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip\" -o \"awscliv2.zip\"",
