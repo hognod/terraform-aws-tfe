@@ -74,6 +74,8 @@ resource "aws_launch_template" "main" {
   }
 
   block_device_mappings {
+    device_name = data.aws_ami.main.root_device_name
+
     ebs {
       volume_size           = var.node_group_disk_size
       delete_on_termination = true
