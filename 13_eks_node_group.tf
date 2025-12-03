@@ -12,7 +12,7 @@ resource "aws_eks_node_group" "main" {
     var.node_group_instance_type
   ]
   ami_type  = var.node_group_ami_type
-  disk_size = var.node_group_disk_size
+  # disk_size = var.node_group_disk_size # Defined in the launch template
 
   launch_template {
     id      = aws_launch_template.main.id
