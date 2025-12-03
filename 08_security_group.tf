@@ -55,6 +55,16 @@ resource "aws_security_group" "eks-cluster" {
     to_port   = 443
     protocol  = "TCP"
     cidr_blocks = [
+      aws_subnet.public-a.cidr_block
+    ]
+    description = "Allow TCP/443 (HTTPS) inbound to EKS cluster from bastion."
+  }
+
+  ingress {
+    from_port = 443
+    to_port   = 443
+    protocol  = "TCP"
+    cidr_blocks = [
       aws_subnet.private-a.cidr_block,
       aws_subnet.private-b.cidr_block
     ]
