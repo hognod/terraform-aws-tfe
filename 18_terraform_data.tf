@@ -170,16 +170,19 @@ resource "terraform_data" "destroy" {
     aws_eks_node_group.main
   ]
 
-  connection {
-    host        = aws_instance.public.public_ip
-    user        = var.instance_user
-    private_key = tls_private_key.main.private_key_pem
-
-    timeout = "2m"
-  }
-
   input = {
     tfe_kube_namespace = var.tfe_kube_namespace
+    host = aws_instance.public.public_ip
+    user = var.instance_user
+    private_key = tls_private_key.main.private_key_pem
+  }
+
+  connection {
+    host        = self.output.host
+    user        = self.output.user
+    private_key = self.output.private_key
+
+    timeout = "2m"
   }
 
   provisioner "remote-exec" {
