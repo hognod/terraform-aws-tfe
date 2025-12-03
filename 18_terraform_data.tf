@@ -119,6 +119,8 @@ resource "terraform_data" "public" {
   }
 
   provisioner "remote-exec" {
+    on_failure = continue
+
     inline = [
       "cp -r /tmp/cert ~/cert",
 
@@ -159,6 +161,13 @@ resource "terraform_data" "public" {
 
       "helm repo add hashicorp https://helm.releases.hashicorp.com",
       "helm install terraform-enterprise hashicorp/terraform-enterprise --namespace ${var.tfe_kube_namespace} --values test.yaml"
+    ]
+  }
+
+  provisioner "remote-exec" {
+    when = destroy
+    inline = [
+      "helm delete terraform-enterprise --namespace ${var.tfe_kube_namespace}"
     ]
   }
 }
