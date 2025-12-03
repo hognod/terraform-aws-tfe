@@ -1,4 +1,8 @@
 resource "aws_instance" "public" {
+  depends_on = [
+    aws_internet_gateway.igw
+  ]
+
   ami           = var.instance_ami_id
   instance_type = var.instance_type
   key_name      = aws_key_pair.main.key_name

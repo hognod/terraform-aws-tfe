@@ -190,6 +190,10 @@ resource "aws_security_group" "node_group" {
     ]
     description = "Allow all outbound traffic from node group."
   }
+
+  tags = {
+    Name = "hognod-node-group"
+  }
 }
 
 # Elasticache

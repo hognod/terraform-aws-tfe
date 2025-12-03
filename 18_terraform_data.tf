@@ -89,8 +89,8 @@ locals {
             name = "terraform-enterprise-agent"
             resources = {
               requests = {
-                cpu    = "2000m"
-                memory = "4Gi"
+                cpu    = "3000m"
+                memory = "2048Mi"
               }
             }
           }
@@ -160,6 +160,7 @@ resource "terraform_data" "public" {
       "kubectl create secret tls tfe-certs --namespace=${var.tfe_kube_namespace} --cert=$(pwd)/cert/cert.pem --key=$(pwd)/cert/key.pem",
 
       "helm repo add hashicorp https://helm.releases.hashicorp.com",
+      "sleep 10s",
       "helm install terraform-enterprise hashicorp/terraform-enterprise --namespace ${var.tfe_kube_namespace} --values test.yaml"
     ]
   }
@@ -172,9 +173,9 @@ resource "terraform_data" "destroy" {
 
   input = {
     tfe_kube_namespace = var.tfe_kube_namespace
-    host = aws_instance.public.public_ip
-    user = var.instance_user
-    private_key = tls_private_key.main.private_key_pem
+    host               = aws_instance.public.public_ip
+    user               = var.instance_user
+    private_key        = tls_private_key.main.private_key_pem
   }
 
   connection {
@@ -186,7 +187,8 @@ resource "terraform_data" "destroy" {
   }
 
   provisioner "remote-exec" {
-    when = destroy
+    when       = destroy
+    on_failure = continue
     inline = [
       "helm delete terraform-enterprise --namespace ${self.output.tfe_kube_namespace}"
     ]
