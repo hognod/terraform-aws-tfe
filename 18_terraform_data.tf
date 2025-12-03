@@ -4,7 +4,7 @@ locals {
 
     tls = {
       certificateSecret = "tfe-certs"
-      caCertData = base64encode(file("./cert/bundle.pem"))
+      caCertData        = base64encode(file("./cert/bundle.pem"))
     }
 
     image = {
@@ -61,15 +61,15 @@ locals {
         TFE_DATABASE_PARAMETERS = "sslmode=require"
 
         # Object storage settings
-        TFE_OBJECT_STORAGE_TYPE                           = "s3"
-        TFE_OBJECT_STORAGE_S3_BUCKET                      = aws_s3_bucket.main.id
-        TFE_OBJECT_STORAGE_S3_REGION                      = var.region
-        TFE_OBJECT_STORAGE_S3_USE_INSTANCE_PROFILE        = "true"
-        TFE_OBJECT_STORAGE_S3_SERVER_SIDE_ENCRYPTION      = "AES256"
+        TFE_OBJECT_STORAGE_TYPE                                 = "s3"
+        TFE_OBJECT_STORAGE_S3_BUCKET                            = aws_s3_bucket.main.id
+        TFE_OBJECT_STORAGE_S3_REGION                            = var.region
+        TFE_OBJECT_STORAGE_S3_USE_INSTANCE_PROFILE              = "true"
+        TFE_OBJECT_STORAGE_S3_SERVER_SIDE_ENCRYPTION            = "AES256"
         TFE_OBJECT_STORAGE_S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID = ""
 
         # Redis settings
-        TFE_REDIS_HOST    = "${aws_elasticache_cluster.main.cache_nodes[0].address}:${aws_elasticache_cluster.main.cache_nodes[0].port}"
+        TFE_REDIS_HOST     = "${aws_elasticache_cluster.main.cache_nodes[0].address}:${aws_elasticache_cluster.main.cache_nodes[0].port}"
         TFE_REDIS_USE_AUTH = "false"
         TFE_REDIS_USE_TLS  = "false"
       }
@@ -110,7 +110,7 @@ resource "terraform_data" "public" {
   }
 
   provisioner "file" {
-    source = "./cert"
+    source      = "./cert"
     destination = "/tmp"
   }
 
@@ -153,7 +153,8 @@ resource "terraform_data" "public" {
       "kubectl create secret generic tfe-secrets --namespace=${var.tfe_kube_namespace} --from-file=TFE_LICENSE=$(pwd)/terraform.hclic --from-literal=TFE_ENCRYPTION_PASSWORD=hashicorp --from-literal=TFE_DATABASE_PASSWORD=${var.db_password}",
       "kubectl create secret tls tfe-certs --namespace=${var.tfe_kube_namespace} --cert=$(pwd)/cert/cert.pem --key=$(pwd)/cert/key.pem",
 
-      "helm repo add hashicorp https://helm.releases.hashicorp.com"
+      "helm repo add hashicorp https://helm.releases.hashicorp.com",
+      "helm install terraform-enterprise hashicorp/terraform-enterprise --namespace ${var.tfe_kube_namespace} --values test.yaml"
     ]
   }
 }

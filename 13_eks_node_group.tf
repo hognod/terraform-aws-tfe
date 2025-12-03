@@ -14,6 +14,11 @@ resource "aws_eks_node_group" "main" {
   ami_type  = var.node_group_ami_type
   disk_size = var.node_group_disk_size
 
+  launch_template {
+    id      = aws_launch_template.main.id
+    version = aws_launch_template.main.latest_version
+  }
+
   scaling_config {
     desired_size = 2
     max_size     = 2
@@ -26,5 +31,27 @@ resource "aws_eks_node_group" "main" {
 
   tags = {
     Name = "hognod-eks-node-group"
+  }
+}
+
+resource "aws_launch_template" "main" {
+  name = "hognod-launch-template"
+
+  network_interfaces {
+    associate_public_ip_address = false
+    security_groups = [
+      aws_security_group.node_group.id
+    ]
+  }
+
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      Name = "hognod-node"
+    }
+  }
+
+  tags = {
+    Name = "hognod-node-group"
   }
 }

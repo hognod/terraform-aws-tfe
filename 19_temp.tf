@@ -95,3 +95,30 @@ resource "aws_instance" "windows" {
     Name = "hognod-windows"
   }
 }
+
+
+resource "terraform_data" "gitlab" {
+  connection {
+    bastion_host        = aws_instance.public.public_ip
+    bastion_user        = "ubuntu"
+    bastion_private_key = tls_private_key.main.private_key_pem
+
+    host        = aws_instance.gitlab.private_ip
+    user        = "ubuntu"
+    private_key = tls_private_key.main.private_key_pem
+
+    timeout = "2m"
+  }
+
+  provisioner "file" {
+    source      = "./cert"
+    destination = "/home/ubuntu"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo cp ~/cert/ca.crt /usr/local/share/ca-certificates",
+      "sudo update-ca-certificates"
+    ]
+  }
+}
