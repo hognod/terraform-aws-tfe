@@ -147,6 +147,17 @@ resource "aws_security_group" "node_group" {
   }
 
   ingress {
+    from_port = 9443
+    to_port   = 9443
+    protocol  = "TCP"
+    cidr_blocks = [
+      aws_subnet.private-a.cidr_block,
+      aws_subnet.private-b.cidr_block
+    ]
+    description = "Allow TCP/9443 (ALB controller, NGINX) inbound to node group from EKS cluster (cluster API)."
+  }
+
+  ingress {
     from_port   = 53
     to_port     = 53
     protocol    = "TCP"
