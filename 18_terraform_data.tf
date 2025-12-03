@@ -101,6 +101,10 @@ locals {
 }
 
 resource "terraform_data" "public" {
+  depends_on = [
+    aws_eks_node_group.main
+  ]
+
   connection {
     host        = aws_instance.public.public_ip
     user        = var.instance_user
