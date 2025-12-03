@@ -113,6 +113,10 @@ resource "terraform_data" "public" {
     timeout = "2m"
   }
 
+  input = {
+      tfe_kube_namespace = var.tfe_kube_namespace
+    }
+
   provisioner "file" {
     source      = "./cert"
     destination = "/tmp"
@@ -167,7 +171,7 @@ resource "terraform_data" "public" {
   provisioner "remote-exec" {
     when = destroy
     inline = [
-      "helm delete terraform-enterprise --namespace ${var.tfe_kube_namespace}"
+      "helm delete terraform-enterprise --namespace ${self.output.tfe_kube_namespace}"
     ]
   }
 }
