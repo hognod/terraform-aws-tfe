@@ -113,10 +113,6 @@ resource "terraform_data" "public" {
     timeout = "2m"
   }
 
-  input = {
-      tfe_kube_namespace = var.tfe_kube_namespace
-    }
-
   provisioner "file" {
     source      = "./cert"
     destination = "/tmp"
@@ -166,6 +162,24 @@ resource "terraform_data" "public" {
       "helm repo add hashicorp https://helm.releases.hashicorp.com",
       "helm install terraform-enterprise hashicorp/terraform-enterprise --namespace ${var.tfe_kube_namespace} --values test.yaml"
     ]
+  }
+}
+
+resource "terraform_data" "destroy" {
+  depends_on = [
+    aws_eks_node_group.main
+  ]
+
+  connection {
+    host        = aws_instance.public.public_ip
+    user        = var.instance_user
+    private_key = tls_private_key.main.private_key_pem
+
+    timeout = "2m"
+  }
+
+  input = {
+    tfe_kube_namespace = var.tfe_kube_namespace
   }
 
   provisioner "remote-exec" {
