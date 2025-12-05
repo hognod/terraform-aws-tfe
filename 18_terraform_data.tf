@@ -33,9 +33,9 @@ locals {
 
     service = {
       annotations = {
-        "service.beta.kubernetes.io/aws-load-balancer-type"             = "nlb"
+        "service.beta.kubernetes.io/aws-load-balancer-type"             = "nlb-ip"
         "service.beta.kubernetes.io/aws-load-balancer-backend-protocol" = "tcp"
-        "service.beta.kubernetes.io/aws-load-balancer-scheme"           = "internal"
+        "service.beta.kubernetes.io/aws-load-balancer-internal"         = "true"
         "service.beta.kubernetes.io/aws-load-balancer-subnets"          = "${aws_subnet.private-a.id},${aws_subnet.private-b.id}"
         "service.beta.kubernetes.io/aws-load-balancer-security-groups"  = ""
       }
@@ -160,7 +160,7 @@ resource "terraform_data" "public" {
       "kubectl create secret tls tfe-certs --namespace=${var.tfe_kube_namespace} --cert=$(pwd)/cert/cert.pem --key=$(pwd)/cert/key.pem",
 
       "helm repo add hashicorp https://helm.releases.hashicorp.com",
-      "sleep 10s",
+      "sleep 60s",
       "helm install terraform-enterprise hashicorp/terraform-enterprise --namespace ${var.tfe_kube_namespace} --values test.yaml"
     ]
   }
@@ -172,10 +172,11 @@ resource "terraform_data" "destroy" {
   ]
 
   input = {
-    tfe_kube_namespace = var.tfe_kube_namespace
-    host               = aws_instance.public.public_ip
-    user               = var.instance_user
-    private_key        = tls_private_key.main.private_key_pem
+    tfe_kube_namespace               = var.tfe_kube_namespace
+    tfe_lb_controller_kube_namespace = var.tfe_lb_controller_kube_namespace
+    host                             = aws_instance.public.public_ip
+    user                             = var.instance_user
+    private_key                      = tls_private_key.main.private_key_pem
   }
 
   connection {
@@ -190,7 +191,10 @@ resource "terraform_data" "destroy" {
     when       = destroy
     on_failure = continue
     inline = [
-      "helm delete terraform-enterprise --namespace ${self.output.tfe_kube_namespace}"
+      "helm delete terraform-enterprise --namespace ${self.output.tfe_kube_namespace}",
+      "sleep 30s",
+      "helm delete aws-load-balancer-controller --namespace ${self.output.tfe_lb_controller_kube_namespace}",
+      "sleep 30s"
     ]
   }
 }
