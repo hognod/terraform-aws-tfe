@@ -35,7 +35,7 @@ locals {
       annotations = {
         "service.beta.kubernetes.io/aws-load-balancer-type"             = "nlb-ip"
         "service.beta.kubernetes.io/aws-load-balancer-backend-protocol" = "tcp"
-        "service.beta.kubernetes.io/aws-load-balancer-internal"         = "true"
+        "service.beta.kubernetes.io/aws-load-balancer-internal"         = "\\\"true\\\""
         "service.beta.kubernetes.io/aws-load-balancer-subnets"          = "${aws_subnet.private-a.id},${aws_subnet.private-b.id}"
         "service.beta.kubernetes.io/aws-load-balancer-security-groups"  = ""
       }
@@ -79,22 +79,6 @@ locals {
       requests = {
         memory = "8192Mi"
         cpu    = "2000m"
-      }
-    }
-
-    agentWorkerPodTemplate = {
-      spec = {
-        containers = [
-          {
-            name = "terraform-enterprise-agent"
-            resources = {
-              requests = {
-                cpu    = "3000m"
-                memory = "2048Mi"
-              }
-            }
-          }
-        ]
       }
     }
   }

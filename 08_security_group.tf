@@ -91,16 +91,16 @@ resource "aws_security_group" "node_group" {
   name   = "hognod-node-group"
   vpc_id = aws_vpc.main.id
 
-  ingress {
-    from_port = 443
-    to_port   = 443
-    protocol  = "TCP"
-    cidr_blocks = [
-      aws_subnet.private-a.cidr_block,
-      aws_subnet.private-b.cidr_block
-    ]
-    description = "Allow TCP/443 (HTTPS) inbound to node group from TFE load balancer."
-  }
+  # ingress {
+  #   from_port = 443
+  #   to_port   = 443
+  #   protocol  = "TCP"
+  #   cidr_blocks = [
+  #     aws_subnet.private-a.cidr_block,
+  #     aws_subnet.private-b.cidr_block
+  #   ]
+  #   description = "Allow TCP/443 (HTTPS) inbound to node group from TFE load balancer."
+  # }
 
   ingress {
     from_port = 8080
