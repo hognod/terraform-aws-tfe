@@ -103,6 +103,17 @@ resource "aws_security_group" "node_group" {
   # }
 
   ingress {
+    from_port = 8446
+    to_port   = 8446
+    protocol  = "TCP"
+    cidr_blocks = [
+      aws_subnet.private-a.cidr_block,
+      aws_subnet.private-b.cidr_block
+    ]
+    description = "Allow TCP/443 (HTTPS) inbound to node group from TFE load balancer."
+  }
+
+  ingress {
     from_port = 8080
     to_port   = 8080
     protocol  = "TCP"
