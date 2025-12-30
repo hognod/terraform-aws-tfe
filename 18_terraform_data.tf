@@ -72,6 +72,10 @@ data "template_file" "gitlab" {
 }
 
 resource "terraform_data" "gitlab" {
+  depends_on = [
+    terraform_data.bastion
+  ]
+
   connection {
     bastion_host = aws_instance.bastion.public_ip
     bastion_user = var.instance_user
