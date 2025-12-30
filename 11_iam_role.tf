@@ -491,7 +491,7 @@ data "aws_iam_policy_document" "agent_irsa_policy" {
       "sts:AssumeRole"
     ]
     resources = [
-      
+      aws_iam_role.assume_role.arn
     ]
   }
 }

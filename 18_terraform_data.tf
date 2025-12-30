@@ -20,9 +20,10 @@ resource "terraform_data" "bastion" {
     on_failure = continue
 
     inline = [
-      # key
+      # prerequisites
       "echo '${tls_private_key.main.private_key_pem}' > ~/${var.prefix}.pem",
       "chmod 400 ~/${var.prefix}.pem",
+      "echo ${var.tfe_license} > terraform.hclic",
 
       # aws cli install
       "curl \"https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip\" -o \"awscliv2.zip\"",
@@ -89,7 +90,7 @@ resource "terraform_data" "gitlab" {
   }
 
   provisioner "file" {
-    source = data.template_file.gitlab.rendered
+    content = data.template_file.gitlab.rendered
     destination = "/home/${var.instance_user}/gitlab.rb"
   }
 
