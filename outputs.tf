@@ -1,5 +1,5 @@
 output "public_ip" {
-  value = aws_instance.public.public_ip
+  value = aws_instance.bastion.public_ip
 }
 
 output "public_key_openssh" {

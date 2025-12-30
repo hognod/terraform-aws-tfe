@@ -12,7 +12,7 @@ resource "aws_instance" "bastion" {
   }
 
   subnet_id              = aws_subnet.public-a.id
-  vpc_security_group_ids = [aws_security_group.public.id]
+  vpc_security_group_ids = [aws_security_group.bastion.id]
   private_ip             = cidrhost(aws_subnet.public-a.cidr_block, 101)
 
   tags = {

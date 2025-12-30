@@ -477,7 +477,7 @@ resource "aws_iam_role" "agent_irsa_role" {
   name = "${var.prefix}-agent-irsa-role"
   path = "/"
 
-  assume_role_policy = data.aws_iam_policy_document.tfe_agent_irsa_trust_relationship.json
+  assume_role_policy = data.aws_iam_policy_document.agent_irsa_trust_relationship.json
 
   tags = {
     Name = "${var.prefix}-agent-irsa-role"
