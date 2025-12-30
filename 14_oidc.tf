@@ -10,7 +10,7 @@ resource "aws_iam_openid_connect_provider" "main" {
   ]
 
   tags = {
-    Name = "hognod-oidc"
+    Name = "${var.prefix}-oidc"
   }
 }
 

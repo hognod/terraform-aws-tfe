@@ -1,17 +1,17 @@
 resource "aws_db_subnet_group" "main" {
-  name = "hognod-db-subnet-group"
+  name = "${var.prefix}-db-subnet-group"
   subnet_ids = [
     aws_subnet.private-a.id,
-    aws_subnet.private-b.id
+    aws_subnet.private-c.id
   ]
 
   tags = {
-    Name = "hognod-db-subnet-group"
+    Name = "${var.prefix}-db-subnet-group"
   }
 }
 
 resource "aws_db_instance" "main" {
-  identifier = "hognod-rds-cluster"
+  identifier = "${var.prefix}-rds-cluster"
 
   engine         = "postgres"
   engine_version = var.db_engine_version
@@ -46,6 +46,6 @@ resource "aws_db_instance" "main" {
   deletion_protection        = false
 
   tags = {
-    Name = "hognod-rds-cluster"
+    Name = "${var.prefix}-rds-cluster"
   }
 }

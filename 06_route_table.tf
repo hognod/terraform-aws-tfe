@@ -12,7 +12,7 @@ resource "aws_route_table" "public-a" {
   }
 
   tags = {
-    Name = "hognod-public-rtb-a"
+    Name = "${var.prefix}-public-rtb-a"
   }
 }
 
@@ -30,11 +30,11 @@ resource "aws_route_table" "private-a" {
   }
 
   tags = {
-    Name = "hognod-private-rtb-a"
+    Name = "${var.prefix}-private-rtb-a"
   }
 }
 
-resource "aws_route_table" "private-b" {
+resource "aws_route_table" "private-c" {
   vpc_id = aws_vpc.main.id
 
   route {
@@ -48,6 +48,6 @@ resource "aws_route_table" "private-b" {
   }
 
   tags = {
-    Name = "hognod-private-rtb-b"
+    Name = "${var.prefix}-private-rtb-c"
   }
 }

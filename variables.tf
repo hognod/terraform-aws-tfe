@@ -3,6 +3,11 @@ variable "access_key" {}
 variable "secret_key" {}
 variable "region" {}
 
+variable "prefix" {
+  type = string
+  default = "tfe"
+}
+
 # Instance
 variable "instance_ami_id" {
   type        = string
@@ -14,16 +19,41 @@ variable "instance_ami_id" {
   EOT
 }
 
+variable "windows_instance_ami_id" {
+  type        = string
+  description = <<-EOT
+    Microsoft Windows Server 2022 Base : ami-091f0555283ad8033
+    Microsoft Windows Server 2025 Base : ami-03bf0c45be3d883bb
+  EOT
+}
+
 variable "instance_user" {
   type    = string
   default = "ubuntu"
+}
+
+variable "windows_instance_user" {
+  type = string
+  default = "Administrator"
+}
+
+variable "windows_instance_password" {
+  type = string
 }
 
 variable "instance_type" {
   type = string
 }
 
+variable "windows_instance_type" {
+  type = string
+}
+
 variable "instance_volume_size" {
+  type = string
+}
+
+variable "windows_instance_volume_size" {
   type = string
 }
 
@@ -92,5 +122,18 @@ variable "tfe_lb_controller_kube_namespace" {
 }
 
 variable "tfe_lb_controller_kube_svc_account" {
+  type = string
+}
+
+variable "tfe_agent_kube_svc_account" {
+  type = string
+}
+
+# ETC
+variable "tfe_domain" {
+  type = string
+}
+
+variable "gitlab_domain" {
   type = string
 }

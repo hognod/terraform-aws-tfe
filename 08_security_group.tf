@@ -1,6 +1,7 @@
-# Instance
-resource "aws_security_group" "public" {
-  name   = "hognod-public"
+############### Instance ###############
+## Bastion
+resource "aws_security_group" "bastion" {
+  name   = "${var.prefix}-bastion"
   vpc_id = aws_vpc.main.id
 
   ingress {
@@ -36,18 +37,88 @@ resource "aws_security_group" "public" {
     protocol  = "TCP"
     cidr_blocks = [
       aws_subnet.private-a.cidr_block,
-      aws_subnet.private-b.cidr_block
+      aws_subnet.private-c.cidr_block
     ]
   }
 
   tags = {
-    Name = "hognod-public"
+    Name = "${var.prefix}-bastion"
   }
 }
 
-# EKS
+## windows bastion
+resource "aws_security_group" "windows" {
+  name   = "${var.prefix}-windows-bastion"
+  vpc_id = aws_vpc.main.id
+
+  # RDP
+  ingress {
+    from_port = 3389
+    to_port   = 3389
+    protocol  = "TCP"
+    cidr_blocks = [
+      "0.0.0.0/0"
+    ]
+  }
+
+  egress {
+    from_port = 0
+    to_port   = 0
+    protocol  = "-1"
+    cidr_blocks = [
+      "0.0.0.0/0"
+    ]
+  }
+
+  tags = {
+    Name = "${var.prefix}-windows-bastion"
+  }
+}
+
+## GitLab
+resource "aws_security_group" "gitlab" {
+  name   = "${var.prefix}-gitlab"
+  vpc_id = aws_vpc.main.id
+
+  ingress {
+    from_port = 22
+    to_port   = 22
+    protocol  = "TCP"
+    cidr_blocks = [
+      aws_subnet.public-a.cidr_block
+    ]
+  }
+
+  ingress {
+    from_port = 443
+    to_port   = 443
+    protocol  = "TCP"
+    cidr_blocks = [
+      aws_subnet.public-a.cidr_block, # Bundle Unload
+      aws_subnet.private-a.cidr_block,
+      aws_subnet.private-c.cidr_block
+    ]
+  }
+
+  egress {
+    from_port = 443
+    to_port   = 443
+    protocol  = "TCP"
+    cidr_blocks = [
+      aws_subnet.public-a.cidr_block, # Bundle Download
+      aws_subnet.private-a.cidr_block,
+      aws_subnet.private-c.cidr_block
+    ]
+  }
+
+  tags = {
+    Name = "${var.prefix}-gitlab"
+  }
+}
+
+############### EKS ###############
 resource "aws_security_group" "eks-cluster" {
-  name   = "hognod-eks-cluster"
+  name   = "${var.prefix}-eks-cluster"
   vpc_id = aws_vpc.main.id
 
   ingress {
@@ -66,7 +137,7 @@ resource "aws_security_group" "eks-cluster" {
     protocol  = "TCP"
     cidr_blocks = [
       aws_subnet.private-a.cidr_block,
-      aws_subnet.private-b.cidr_block
+      aws_subnet.private-c.cidr_block
     ]
     description = "Allow TCP/443 (HTTPS) inbound to EKS cluster from node group."
   }
@@ -82,13 +153,13 @@ resource "aws_security_group" "eks-cluster" {
   }
 
   tags = {
-    Name = "hognod-eks-cluster"
+    Name = "${var.prefix}-eks-cluster"
   }
 }
 
-# Node Group
+############### Node Group ###############
 resource "aws_security_group" "node_group" {
-  name   = "hognod-node-group"
+  name   = "${var.prefix}-node-group"
   vpc_id = aws_vpc.main.id
 
   # ingress {
@@ -108,21 +179,21 @@ resource "aws_security_group" "node_group" {
     protocol  = "TCP"
     cidr_blocks = [
       aws_subnet.private-a.cidr_block,
-      aws_subnet.private-b.cidr_block
+      aws_subnet.private-c.cidr_block
     ]
     description = "Allow TCP/443 (HTTPS) inbound to node group from TFE load balancer."
   }
 
-  ingress {
-    from_port = 8080
-    to_port   = 8080
-    protocol  = "TCP"
-    cidr_blocks = [
-      aws_subnet.private-a.cidr_block,
-      aws_subnet.private-b.cidr_block
-    ]
-    description = "Allow TCP/8080 or specified port (TFE HTTP) inbound to node group from TFE load balancer."
-  }
+  # ingress {
+  #   from_port = 8080
+  #   to_port   = 8080
+  #   protocol  = "TCP"
+  #   cidr_blocks = [
+  #     aws_subnet.private-a.cidr_block,
+  #     aws_subnet.private-b.cidr_block
+  #   ]
+  #   description = "Allow TCP/8080 or specified port (TFE HTTP) inbound to node group from TFE load balancer."
+  # }
 
   ingress {
     from_port = 8443
@@ -130,7 +201,7 @@ resource "aws_security_group" "node_group" {
     protocol  = "TCP"
     cidr_blocks = [
       aws_subnet.private-a.cidr_block,
-      aws_subnet.private-b.cidr_block
+      aws_subnet.private-c.cidr_block
     ]
     description = "Allow TCP/8443 or specified port (TFE HTTPS) inbound to node group from TFE load balancer."
   }
@@ -141,7 +212,7 @@ resource "aws_security_group" "node_group" {
     protocol  = "TCP"
     cidr_blocks = [
       aws_subnet.private-a.cidr_block,
-      aws_subnet.private-b.cidr_block
+      aws_subnet.private-c.cidr_block
     ]
     description = "Allow TCP/10250 (kubelet) inbound to node group from EKS cluster (cluster API)."
   }
@@ -152,7 +223,7 @@ resource "aws_security_group" "node_group" {
     protocol  = "TCP"
     cidr_blocks = [
       aws_subnet.private-a.cidr_block,
-      aws_subnet.private-b.cidr_block
+      aws_subnet.private-c.cidr_block
     ]
     description = "Allow TCP/4443 (webhooks) inbound to node group from EKS cluster (cluster API)."
   }
@@ -163,7 +234,7 @@ resource "aws_security_group" "node_group" {
     protocol  = "TCP"
     cidr_blocks = [
       aws_subnet.private-a.cidr_block,
-      aws_subnet.private-b.cidr_block
+      aws_subnet.private-c.cidr_block
     ]
     description = "Allow TCP/9443 (ALB controller, NGINX) inbound to node group from EKS cluster (cluster API)."
   }
@@ -203,13 +274,13 @@ resource "aws_security_group" "node_group" {
   }
 
   tags = {
-    Name = "hognod-node-group"
+    Name = "${var.prefix}-node-group"
   }
 }
 
-# Elasticache
+############### Elasticache ###############
 resource "aws_security_group" "ealsticache" {
-  name   = "hognod-elasticache"
+  name   = "${var.prefix}-elasticache"
   vpc_id = aws_vpc.main.id
 
   ingress {
@@ -218,18 +289,18 @@ resource "aws_security_group" "ealsticache" {
     protocol  = "TCP"
     cidr_blocks = [
       aws_subnet.private-a.cidr_block,
-      aws_subnet.private-b.cidr_block
+      aws_subnet.private-c.cidr_block
     ]
   }
 
   tags = {
-    Name = "hognod-elasticache"
+    Name = "${var.prefix}-elasticache"
   }
 }
 
-#RDS
+############### RDS ###############
 resource "aws_security_group" "rds" {
-  name   = "hognod-rds"
+  name   = "${var.prefix}-rds"
   vpc_id = aws_vpc.main.id
 
   ingress {
@@ -238,11 +309,11 @@ resource "aws_security_group" "rds" {
     protocol  = "TCP"
     cidr_blocks = [
       aws_subnet.private-a.cidr_block,
-      aws_subnet.private-b.cidr_block
+      aws_subnet.private-c.cidr_block
     ]
   }
 
   tags = {
-    Name = "hognod-rds"
+    Name = "${var.prefix}-rds"
   }
 }

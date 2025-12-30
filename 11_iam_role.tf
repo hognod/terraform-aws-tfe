@@ -1,4 +1,4 @@
-# EKS Cluster
+############### EKS Cluster ###############
 data "aws_iam_policy_document" "eks_cluster_assume_role" {
   statement {
     effect  = "Allow"
@@ -27,17 +27,7 @@ resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
   role       = aws_iam_role.eks_cluster.name
 }
 
-resource "aws_iam_role_policy_attachment" "eks_service_policy" {
-  policy_arn = "arn:${data.aws_partition.current.partition}:iam::aws:policy/AmazonEKSServicePolicy"
-  role       = aws_iam_role.eks_cluster.name
-}
-
-resource "aws_iam_role_policy_attachment" "eks_vpc_resource_controller_policy" {
-  policy_arn = "arn:${data.aws_partition.current.partition}:iam::aws:policy/AmazonEKSVPCResourceController"
-  role       = aws_iam_role.eks_cluster.name
-}
-
-# EKS Node group
+############### EKS Node group ###############
 data "aws_iam_policy_document" "eks_node_group_assume_role" {
   statement {
     effect  = "Allow"
@@ -76,8 +66,8 @@ resource "aws_iam_role_policy_attachment" "eks_node_group_container_registry_rea
   role       = aws_iam_role.eks_node_group.name
 }
 
-# IRSA
-data "aws_iam_policy_document" "irsa_assume_role" {
+############### S3 IRSA Role ###############
+data "aws_iam_policy_document" "s3_irsa_trust_relationship" {
   statement {
     effect  = "Allow"
     actions = ["sts:AssumeRoleWithWebIdentity"]
@@ -103,19 +93,18 @@ data "aws_iam_policy_document" "irsa_assume_role" {
   }
 }
 
-resource "aws_iam_role" "irsa" {
-  name = "hognod-irsa-role"
+resource "aws_iam_role" "s3_irsa_role" {
+  name = "${var.prefix}-s3-irsa-role"
   path = "/"
 
-  assume_role_policy = data.aws_iam_policy_document.irsa_assume_role.json
+  assume_role_policy = data.aws_iam_policy_document.s3_irsa_trust_relationship.json
 
   tags = {
-    Name = "hognod-irsa-role"
+    Name = "${var.prefix}-s3-irsa-role"
   }
 }
 
-//////////
-data "aws_iam_policy_document" "workload_identity_s3" {
+data "aws_iam_policy_document" "s3_irsa_policy" {
   statement {
     effect = "Allow"
     actions = [
@@ -132,25 +121,19 @@ data "aws_iam_policy_document" "workload_identity_s3" {
   }
 }
 
-data "aws_iam_policy_document" "workload_identity_combined" {
-  source_policy_documents = [
-    data.aws_iam_policy_document.workload_identity_s3.json
-  ]
+resource "aws_iam_policy" "s3_irsa_policy" {
+  name   = "${var.prefix}-s3-irsa-policy"
+  policy = data.aws_iam_policy_document.s3_irsa_policy.json
 }
 
-resource "aws_iam_policy" "workload_identity" {
-  name   = "hognod-irsa-workload-policy"
-  policy = data.aws_iam_policy_document.workload_identity_combined.json
-}
-
-resource "aws_iam_role_policy_attachment" "irsa_role_policy_attachment" {
-  role       = aws_iam_role.irsa.name
-  policy_arn = aws_iam_policy.workload_identity.arn
+resource "aws_iam_role_policy_attachment" "s3_irsa_role_policy_attachment" {
+  role       = aws_iam_role.s3_irsa_role.name
+  policy_arn = aws_iam_policy.s3_irsa_policy.arn
 }
 
 
-# IRSA for aws_lb_controller
-data "aws_iam_policy_document" "lb_controller_irsa_assume_role" {
+############### AWS LB Controller IRSA Role ###############
+data "aws_iam_policy_document" "lb_controller_irsa_trust_relationship" {
   statement {
     effect  = "Allow"
     actions = ["sts:AssumeRoleWithWebIdentity"]
@@ -176,19 +159,18 @@ data "aws_iam_policy_document" "lb_controller_irsa_assume_role" {
   }
 }
 
-resource "aws_iam_role" "lb_controller_irsa" {
-  name = "hognod-lb-controller-irsa-role"
+resource "aws_iam_role" "lb_controller_irsa_role" {
+  name = "${var.prefix}-lb-controller-irsa-role"
   path = "/"
 
-  assume_role_policy = data.aws_iam_policy_document.lb_controller_irsa_assume_role.json
+  assume_role_policy = data.aws_iam_policy_document.lb_controller_irsa_trust_relationship.json
 
   tags = {
-    Name = "hognod-lb-controller-irsa-role"
+    Name = "${var.prefix}-lb-controller-irsa-role"
   }
 }
 
-//////////
-data "aws_iam_policy_document" "lb_controller_irsa_policy_doc" {
+data "aws_iam_policy_document" "lb_controller_irsa_policy" {
   statement {
     effect = "Allow"
     actions = [
@@ -455,11 +437,99 @@ data "aws_iam_policy_document" "lb_controller_irsa_policy_doc" {
 }
 
 resource "aws_iam_policy" "lb_controller_irsa_policy" {
-  name   = "hognod-lb-controller-irsa-policy"
-  policy = data.aws_iam_policy_document.lb_controller_irsa_policy_doc.json
+  name   = "${var.prefix}-lb-controller-irsa-policy"
+  policy = data.aws_iam_policy_document.lb_controller_irsa_policy.json
 }
 
 resource "aws_iam_role_policy_attachment" "lb_controller_irsa_role_policy_attachment" {
-  role       = aws_iam_role.lb_controller_irsa.name
+  role       = aws_iam_role.lb_controller_irsa_role.name
   policy_arn = aws_iam_policy.lb_controller_irsa_policy.arn
+}
+
+############### TFE Agent IRSA Role ###############
+data "aws_iam_policy_document" "agent_irsa_trust_relationship" {
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+
+    principals {
+      type = "Federated"
+      identifiers = [
+        aws_iam_openid_connect_provider.main.arn
+      ]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "${replace("${aws_iam_openid_connect_provider.main.arn}", "/^(.*provider/)/", "")}:sub"
+      values   = ["system:serviceaccount:${var.tfe_kube_namespace}-agents:${var.tfe_agent_kube_svc_account}"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "${replace("${aws_iam_openid_connect_provider.main.arn}", "/^(.*provider/)/", "")}:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "agent_irsa_role" {
+  name = "${var.prefix}-agent-irsa-role"
+  path = "/"
+
+  assume_role_policy = data.aws_iam_policy_document.tfe_agent_irsa_trust_relationship.json
+
+  tags = {
+    Name = "${var.prefix}-agent-irsa-role"
+  }
+}
+
+data "aws_iam_policy_document" "agent_irsa_policy" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "sts:AssumeRole"
+    ]
+    resources = [
+      
+    ]
+  }
+}
+
+resource "aws_iam_policy" "agent_irsa_policy" {
+  name = "${var.prefix}-agent-irsa-policy"
+  policy = data.aws_iam_policy_document.agent_irsa_policy.json
+}
+
+resource "aws_iam_role_policy_attachment" "agent_irsa_policy_attachment" {
+  role = aws_iam_role.agent_irsa_role.name
+  policy_arn = aws_iam_policy.agent_irsa_policy.arn
+}
+
+############### Assume Role ###############
+data "aws_iam_policy_document" "assume_role_trust_relationship" {
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type = "AWS"
+      identifiers = [
+        aws_iam_role.agent_irsa_role.arn
+      ]
+    }
+  }
+}
+
+resource "aws_iam_role" "assume_role" {
+  name = "${var.prefix}-assume-role"
+  path = "/"
+
+  assume_role_policy = data.aws_iam_policy_document.agent_irsa_trust_relationship.json
+}
+
+# AdministratorAccess
+resource "aws_iam_role_policy_attachment" "assume_role_policy_attachment" {
+  role = aws_iam_role.assume_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }

@@ -1,11 +1,11 @@
 resource "aws_eks_node_group" "main" {
   cluster_name = aws_eks_cluster.main.name
 
-  node_group_name = "hognod-eks-node-group"
+  node_group_name = "${var.prefix}-eks-node-group"
   node_role_arn   = aws_iam_role.eks_node_group.arn
   subnet_ids = [
     aws_subnet.private-a.id,
-    aws_subnet.private-b.id
+    aws_subnet.private-c.id
   ]
   capacity_type = "ON_DEMAND" # ON_DEMAND / SPOT
   instance_types = [
@@ -29,7 +29,7 @@ resource "aws_eks_node_group" "main" {
   }
 
   tags = {
-    Name = "hognod-eks-node-group"
+    Name = "${var.prefix}-eks-node-group"
   }
 }
 
@@ -63,7 +63,7 @@ data "aws_ami" "main" {
 }
 
 resource "aws_launch_template" "main" {
-  name = "hognod-launch-template"
+  name = "${var.prefix}-launch-template"
 
   network_interfaces {
     associate_public_ip_address = false
@@ -87,11 +87,11 @@ resource "aws_launch_template" "main" {
   tag_specifications {
     resource_type = "instance"
     tags = {
-      Name = "hognod-node"
+      Name = "${var.prefix}-node"
     }
   }
 
   tags = {
-    Name = "hognod-node-group"
+    Name = "${var.prefix}-node-group"
   }
 }

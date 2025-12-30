@@ -1,17 +1,17 @@
 resource "aws_elasticache_subnet_group" "main" {
-  name = "hognod-elasticache-subnet-group"
+  name = "${var.prefix}-elasticache-subnet-group"
   subnet_ids = [
     aws_subnet.private-a.id,
-    aws_subnet.private-b.id
+    aws_subnet.private-c.id
   ]
 
   tags = {
-    Name = "hognod-elasticache-subnet-group"
+    Name = "${var.prefix}-elasticache-subnet-group"
   }
 }
 
 resource "aws_elasticache_cluster" "main" {
-  cluster_id        = "hognod-elasticache"
+  cluster_id        = "${var.prefix}-elasticache"
   engine            = "redis" # memcached / redis / valkey
   node_type         = var.elasticache_node_type
   num_cache_nodes   = 1
@@ -21,6 +21,6 @@ resource "aws_elasticache_cluster" "main" {
   ]
 
   tags = {
-    Name = "hognod-elasticache"
+    Name = "${var.prefix}-elasticache"
   }
 }

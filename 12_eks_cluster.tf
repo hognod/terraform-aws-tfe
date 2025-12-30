@@ -1,5 +1,5 @@
 resource "aws_eks_cluster" "main" {
-  name     = "hognod-eks-cluster"
+  name     = "${var.prefix}-eks-cluster"
   role_arn = aws_iam_role.eks_cluster.arn
 
   access_config {
@@ -9,7 +9,7 @@ resource "aws_eks_cluster" "main" {
   vpc_config {
     subnet_ids = [
       aws_subnet.private-a.id,
-      aws_subnet.private-b.id
+      aws_subnet.private-c.id
     ]
     security_group_ids = [
       aws_security_group.eks-cluster.id
@@ -31,7 +31,7 @@ resource "aws_eks_cluster" "main" {
   }
 
   tags = {
-    Name = "hognod-eks-cluster"
+    Name = "${var.prefix}-eks-cluster"
   }
 }
 
@@ -40,7 +40,7 @@ resource "aws_eks_access_entry" "main" {
   principal_arn = data.aws_iam_session_context.current.issuer_arn
 
   tags = {
-    Name = "hognod-eks-access-entry"
+    Name = "${var.prefix}-eks-access-entry"
   }
 }
 

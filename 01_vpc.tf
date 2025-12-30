@@ -4,6 +4,6 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
 
   tags = {
-    Name = "hognod-vpc"
+    Name = "${var.prefix}-vpc"
   }
 }
