@@ -67,14 +67,16 @@ resource "terraform_data" "bastion" {
       "helm repo add eks https://aws.github.io/eks-charts",
       "helm repo update eks",
       "helm install aws-load-balancer-controller eks/aws-load-balancer-controller --namespace ${var.tfe_lb_controller_kube_namespace} --set clusterName=${aws_eks_cluster.main.name} --set serviceAccount.create=true --set serviceAccount.name=${var.tfe_lb_controller_kube_svc_account} --set serviceAccount.annotations.\"eks\\.amazonaws\\.com/role-arn\"=${aws_iam_role.lb_controller_irsa_role.arn} --set region=${var.region} --set vpcId=${aws_vpc.main.id}",
+      "sleep 60s",
 
       # Terraform Enterprise deployment
       "helm repo add hashicorp https://helm.releases.hashicorp.com",
       "helm install terraform-enterprise hashicorp/terraform-enterprise --namespace ${var.tfe_kube_namespace} --values terraform.yaml",
-      "sleep 300s",
+      "sleep 180s",
 
       # TFE Agent Service Account
       "kubectl create --namespace ${var.tfe_kube_namespace}-agents -f terraform-agent-sa.yaml",
+      #"helm upgrade terraform-enterprise hashicorp/terraform-enterprise --namespace ${var.tfe_kube_namespace} --values terraform.yaml",
 
       # GitLab Installer
       "mkdir -p ~/gitlab-installer",
