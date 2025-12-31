@@ -12,12 +12,12 @@ resource "terraform_data" "bastion" {
   }
 
   provisioner "file" {
-    source = "./cert"
+    source      = "./cert"
     destination = "/home/${var.instance_user}"
   }
 
   provisioner "file" {
-    content = tls_private_key.main.private_key_pem
+    content     = tls_private_key.main.private_key_pem
     destination = "/home/${var.instance_user}/${var.prefix}.pem"
   }
 
@@ -72,7 +72,7 @@ resource "terraform_data" "bastion" {
       "helm repo add hashicorp https://helm.releases.hashicorp.com",
       "helm install terraform-enterprise hashicorp/terraform-enterprise --namespace ${var.tfe_kube_namespace} --values terraform.yaml",
       "sleep 120s",
-      
+
       # TFE Agent Service Account
       "kubectl create --namespace ${var.tfe_kube_namespace}-agents -f terraform-agent-sa.yaml",
 
@@ -91,8 +91,8 @@ data "template_file" "gitlab" {
 
   vars = {
     gitlab_domain = var.gitlab_domain
-    cert_path = "/home/${var.instance_user}/cert/service.crt"
-    key_path = "/home/${var.instance_user}/cert/service.key"
+    cert_path     = "/home/${var.instance_user}/cert/service.crt"
+    key_path      = "/home/${var.instance_user}/cert/service.key"
   }
 }
 
@@ -102,8 +102,8 @@ resource "terraform_data" "gitlab" {
   ]
 
   connection {
-    bastion_host = aws_instance.bastion.public_ip
-    bastion_user = var.instance_user
+    bastion_host        = aws_instance.bastion.public_ip
+    bastion_user        = var.instance_user
     bastion_private_key = tls_private_key.main.private_key_pem
 
     host        = aws_instance.gitlab.private_ip
@@ -119,7 +119,7 @@ resource "terraform_data" "gitlab" {
   }
 
   provisioner "file" {
-    content = data.template_file.gitlab.rendered
+    content     = data.template_file.gitlab.rendered
     destination = "/home/${var.instance_user}/gitlab.rb"
   }
 

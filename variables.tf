@@ -4,7 +4,7 @@ variable "secret_key" {}
 variable "region" {}
 
 variable "prefix" {
-  type = string
+  type    = string
   default = "tfe"
 }
 
@@ -33,7 +33,7 @@ variable "instance_user" {
 }
 
 variable "windows_instance_user" {
-  type = string
+  type    = string
   default = "Administrator"
 }
 

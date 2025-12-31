@@ -40,7 +40,7 @@ locals {
 
     service = {
       annotations = {
-        "service.beta.kubernetes.io/aws-load-balancer-name" = var.tfe_lb_name
+        "service.beta.kubernetes.io/aws-load-balancer-name"             = var.tfe_lb_name
         "service.beta.kubernetes.io/aws-load-balancer-type"             = "nlb-ip"
         "service.beta.kubernetes.io/aws-load-balancer-backend-protocol" = "tcp"
         "service.beta.kubernetes.io/aws-load-balancer-internal"         = "\"true\""
@@ -93,9 +93,9 @@ locals {
 
   tfe_agent_service_account_yaml = {
     apiVersion = "v1"
-    kind = "ServiceAccount"
+    kind       = "ServiceAccount"
     metadata = {
-      name = var.tfe_agent_kube_svc_account
+      name      = var.tfe_agent_kube_svc_account
       namespace = "${var.tfe_kube_namespace}-agents"
       annotations = {
         "eks.amazonaws.com/role-arn" = aws_iam_role.agent_irsa_role.arn

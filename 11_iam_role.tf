@@ -497,12 +497,12 @@ data "aws_iam_policy_document" "agent_irsa_policy" {
 }
 
 resource "aws_iam_policy" "agent_irsa_policy" {
-  name = "${var.prefix}-agent-irsa-policy"
+  name   = "${var.prefix}-agent-irsa-policy"
   policy = data.aws_iam_policy_document.agent_irsa_policy.json
 }
 
 resource "aws_iam_role_policy_attachment" "agent_irsa_policy_attachment" {
-  role = aws_iam_role.agent_irsa_role.name
+  role       = aws_iam_role.agent_irsa_role.name
   policy_arn = aws_iam_policy.agent_irsa_policy.arn
 }
 
@@ -530,6 +530,6 @@ resource "aws_iam_role" "assume_role" {
 
 # AdministratorAccess
 resource "aws_iam_role_policy_attachment" "assume_role_policy_attachment" {
-  role = aws_iam_role.assume_role.name
+  role       = aws_iam_role.assume_role.name
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
