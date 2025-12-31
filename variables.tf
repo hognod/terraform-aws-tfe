@@ -32,15 +32,6 @@ variable "instance_user" {
   default = "ubuntu"
 }
 
-variable "windows_instance_user" {
-  type    = string
-  default = "Administrator"
-}
-
-variable "windows_instance_password" {
-  type = string
-}
-
 variable "instance_type" {
   type = string
 }
