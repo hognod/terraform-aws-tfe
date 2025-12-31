@@ -71,7 +71,7 @@ resource "terraform_data" "bastion" {
       # Terraform Enterprise deployment
       "helm repo add hashicorp https://helm.releases.hashicorp.com",
       "helm install terraform-enterprise hashicorp/terraform-enterprise --namespace ${var.tfe_kube_namespace} --values terraform.yaml",
-      "sleep 120s",
+      "sleep 300s",
 
       # TFE Agent Service Account
       "kubectl create --namespace ${var.tfe_kube_namespace}-agents -f terraform-agent-sa.yaml",
