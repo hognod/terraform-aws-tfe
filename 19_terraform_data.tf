@@ -22,7 +22,7 @@ resource "terraform_data" "bastion" {
   }
 
   provisioner "remote-exec" {
-    on_failure = continue
+    #on_failure = continue
 
     inline = [
       # prerequisites
@@ -76,14 +76,13 @@ resource "terraform_data" "bastion" {
 
       # TFE Agent Service Account
       "kubectl create --namespace ${var.tfe_kube_namespace}-agents -f terraform-agent-sa.yaml",
-      #"helm upgrade terraform-enterprise hashicorp/terraform-enterprise --namespace ${var.tfe_kube_namespace} --values terraform.yaml",
 
       # GitLab Installer
       "mkdir -p ~/gitlab-installer",
       "curl -s https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.deb.sh | sudo bash",
       "sudo apt-get install -y --download-only gitlab-ce=18.4.5-ce.0",
       "sudo mv /var/cache/apt/archives/*.deb ~/gitlab-installer",
-      "scp -i ~/${var.prefix}.pem -r ~/gitlab-installer ${var.instance_user}@${aws_instance.gitlab.private_ip}:"
+      #"scp -i ~/${var.prefix}.pem -r ~/gitlab-installer ${var.instance_user}@${aws_instance.gitlab.private_ip}:"
     ]
   }
 }
