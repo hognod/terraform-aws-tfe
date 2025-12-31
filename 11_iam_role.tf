@@ -1,3 +1,50 @@
+############### Bastion EC2 -> EKS Cluster Access 권한(AWS Credential 입력없이 ~/.kube/config 작성) ###############
+data "aws_iam_policy_document" "bastion_eks_access_trust_relationship" {
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "bastion_eks_access_role" {
+  name = "${var.prefix}-bastion-eks-access-role"
+  path = "/"
+
+  assume_role_policy = data.aws_iam_policy_document.bastion_eks_access_trust_relationship.json
+
+  tags = {
+    Name = "${var.prefix}-bastion-eks-access-role"
+  }
+}
+
+data "aws_iam_policy_document" "bastion_eks_access_policy" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "eks:DescribeCluster",
+      "eks:ListClusters"
+    ]
+    resources = [
+      aws_eks_cluster.main.arn
+    ]
+  }
+}
+
+resource "aws_iam_policy" "bastion_eks_access_policy" {
+  name   = "${var.prefix}-bastion-eks-access-policy"
+  policy = data.aws_iam_policy_document.bastion_eks_access_policy.json
+}
+
+resource "aws_iam_role_policy_attachment" "bastion_eks_access_policy_attachment" {
+  role       = aws_iam_role.bastion_eks_access_role.name
+  policy_arn = aws_iam_policy.bastion_eks_access_policy.arn
+}
+
 ############### EKS Cluster ###############
 data "aws_iam_policy_document" "eks_cluster_assume_role" {
   statement {
@@ -12,13 +59,13 @@ data "aws_iam_policy_document" "eks_cluster_assume_role" {
 }
 
 resource "aws_iam_role" "eks_cluster" {
-  name = "hognod-eks-cluster-role"
+  name = "${var.prefix}-eks-cluster-role"
   path = "/"
 
   assume_role_policy = data.aws_iam_policy_document.eks_cluster_assume_role.json
 
   tags = {
-    Name = "hognod-eks-cluster-role"
+    Name = "${var.prefix}-eks-cluster-role"
   }
 }
 
@@ -41,13 +88,13 @@ data "aws_iam_policy_document" "eks_node_group_assume_role" {
 }
 
 resource "aws_iam_role" "eks_node_group" {
-  name = "hognod-eks-node-group-role"
+  name = "${var.prefix}-eks-node-group-role"
   path = "/"
 
   assume_role_policy = data.aws_iam_policy_document.eks_node_group_assume_role.json
 
   tags = {
-    Name = "hognod-eks-node-group-role"
+    Name = "${var.prefix}-eks-node-group-role"
   }
 }
 

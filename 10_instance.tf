@@ -1,10 +1,19 @@
+############### Bastion EC2 -> EKS Cluster Access 권한(AWS Credential 입력없이 ~/.kube/config 작성) ###############
+resource "aws_iam_instance_profile" "bastion_eks_access_profile" {
+  name = "${var.prefix}-bastion-eks-access-profile"
+  role = aws_iam_role.bastion_eks_access_role.name
+}
+
 resource "aws_instance" "bastion" {
   depends_on = [
     aws_internet_gateway.igw
+
+    
   ]
 
   ami           = var.instance_ami_id
   instance_type = var.instance_type
+  iam_instance_profile = aws_iam_instance_profile.bastion_eks_access_profile.name
   key_name      = aws_key_pair.main.key_name
 
   root_block_device {

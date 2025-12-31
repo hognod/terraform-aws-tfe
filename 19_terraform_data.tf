@@ -37,9 +37,9 @@ resource "terraform_data" "bastion" {
       "sudo apt install -y unzip",
       "unzip awscliv2.zip",
       "sudo ./aws/install",
-      "aws configure set aws_access_key_id ${var.access_key}",
-      "aws configure set aws_secret_access_key ${var.secret_key}",
-      "aws configure set region ${var.region}",
+      #"aws configure set aws_access_key_id ${var.access_key}",
+      #"aws configure set aws_secret_access_key ${var.secret_key}",
+      #"aws configure set region ${var.region}",
       "aws eks update-kubeconfig --region ${var.region} --name ${aws_eks_cluster.main.name}",
 
       # kubectl install
@@ -82,7 +82,7 @@ resource "terraform_data" "bastion" {
       "curl -s https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.deb.sh | sudo bash",
       "sudo apt-get install -y --download-only gitlab-ce=18.4.5-ce.0",
       "sudo mv /var/cache/apt/archives/*.deb ~/gitlab-installer",
-      #"scp -i ~/${var.prefix}.pem -r ~/gitlab-installer ${var.instance_user}@${aws_instance.gitlab.private_ip}:"
+      "scp -i ~/${var.prefix}.pem -r ~/gitlab-installer ${var.instance_user}@${aws_instance.gitlab.private_ip}:"
     ]
   }
 }
