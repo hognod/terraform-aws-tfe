@@ -60,7 +60,7 @@ locals {
 
       variables = {
         # TFE configuration settings
-        TFE_HOSTNAME = var.tfe_hostname
+        TFE_HOSTNAME = var.tfe_domain
 
         # Database settings
         TFE_DATABASE_HOST       = aws_db_instance.main.endpoint

@@ -96,10 +96,6 @@ variable "tfe_license" {
   type = string
 }
 
-variable "tfe_hostname" {
-  type = string
-}
-
 variable "tfe_kube_namespace" {
   type = string
 }
