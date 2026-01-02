@@ -71,12 +71,12 @@ resource "terraform_data" "bastion" {
       # AWS Load Balancer Controller deployment
       "helm repo add eks https://aws.github.io/eks-charts",
       "helm repo update eks",
-      "helm install aws-load-balancer-controller eks/aws-load-balancer-controller --namespace ${var.tfe_lb_controller_kube_namespace} --set clusterName=${aws_eks_cluster.main.name} --set serviceAccount.create=true --set serviceAccount.name=${var.tfe_lb_controller_kube_svc_account} --set serviceAccount.annotations.\"eks\\.amazonaws\\.com/role-arn\"=${aws_iam_role.lb_controller_irsa_role.arn} --set region=${var.region} --set vpcId=${aws_vpc.main.id}",
+      "timeout 180 helm install aws-load-balancer-controller eks/aws-load-balancer-controller --namespace ${var.tfe_lb_controller_kube_namespace} --set clusterName=${aws_eks_cluster.main.name} --set serviceAccount.create=true --set serviceAccount.name=${var.tfe_lb_controller_kube_svc_account} --set serviceAccount.annotations.\"eks\\.amazonaws\\.com/role-arn\"=${aws_iam_role.lb_controller_irsa_role.arn} --set region=${var.region} --set vpcId=${aws_vpc.main.id}",
       "sleep 60s",
 
       # Terraform Enterprise deployment
       "helm repo add hashicorp https://helm.releases.hashicorp.com",
-      "helm install terraform-enterprise hashicorp/terraform-enterprise --namespace ${var.tfe_kube_namespace} --values terraform.yaml",
+      "timeout 300 helm install terraform-enterprise hashicorp/terraform-enterprise --namespace ${var.tfe_kube_namespace} --values terraform.yaml",
       "sleep 180s",
 
       # TFE Agent Service Account

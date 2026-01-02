@@ -43,7 +43,7 @@ locals {
         "service.beta.kubernetes.io/aws-load-balancer-name"             = var.tfe_lb_name
         "service.beta.kubernetes.io/aws-load-balancer-type"             = "nlb-ip"
         "service.beta.kubernetes.io/aws-load-balancer-backend-protocol" = "tcp"
-        "service.beta.kubernetes.io/aws-load-balancer-internal"         = "\"true\""
+        "service.beta.kubernetes.io/aws-load-balancer-internal"         = "true"
         "service.beta.kubernetes.io/aws-load-balancer-subnets"          = "${aws_subnet.private-a.id},${aws_subnet.private-c.id}"
         "service.beta.kubernetes.io/aws-load-balancer-security-groups"  = ""
       }
