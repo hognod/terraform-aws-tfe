@@ -22,7 +22,6 @@ resource "aws_route53_record" "tfe_lb" {
   zone_id = aws_route53_zone.private.zone_id
   name = var.tfe_domain
   type = "A"
-  ttl = 300
 
   alias {
     name = data.aws_lb.main.dns_name

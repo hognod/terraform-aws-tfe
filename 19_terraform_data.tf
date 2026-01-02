@@ -96,7 +96,7 @@ resource "terraform_data" "destroy" {
   depends_on = [
     aws_eks_node_group.main,
     aws_eks_access_entry.bastion,
-    aws_aws_eks_access_policy_association.bastion
+    aws_eks_access_policy_association.bastion
   ]
 
   input = {
