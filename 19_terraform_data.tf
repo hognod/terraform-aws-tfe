@@ -68,19 +68,19 @@ resource "terraform_data" "bastion" {
       "kubectl create secret generic tfe-secrets --namespace=${var.tfe_kube_namespace} --from-file=TFE_LICENSE=$(pwd)/terraform.hclic --from-literal=TFE_ENCRYPTION_PASSWORD=hashicorp --from-literal=TFE_DATABASE_PASSWORD=${var.db_password}",
       "kubectl create secret tls tfe-certs --namespace=${var.tfe_kube_namespace} --cert=$(pwd)/cert/cert.pem --key=$(pwd)/cert/key.pem",
 
-      # AWS Load Balancer Controller deployment
-      "helm repo add eks https://aws.github.io/eks-charts",
-      "helm repo update eks",
-      "timeout 60 helm install aws-load-balancer-controller eks/aws-load-balancer-controller --namespace ${var.tfe_lb_controller_kube_namespace} --set clusterName=${aws_eks_cluster.main.name} --set serviceAccount.create=true --set serviceAccount.name=${var.tfe_lb_controller_kube_svc_account} --set serviceAccount.annotations.\"eks\\.amazonaws\\.com/role-arn\"=${aws_iam_role.lb_controller_irsa_role.arn} --set region=${var.region} --set vpcId=${aws_vpc.main.id} || exit 0",
-      "sleep 60s",
+      # # AWS Load Balancer Controller deployment
+      # "helm repo add eks https://aws.github.io/eks-charts",
+      # "helm repo update eks",
+      # "timeout 60 helm install aws-load-balancer-controller eks/aws-load-balancer-controller --namespace ${var.tfe_lb_controller_kube_namespace} --set clusterName=${aws_eks_cluster.main.name} --set serviceAccount.create=true --set serviceAccount.name=${var.tfe_lb_controller_kube_svc_account} --set serviceAccount.annotations.\"eks\\.amazonaws\\.com/role-arn\"=${aws_iam_role.lb_controller_irsa_role.arn} --set region=${var.region} --set vpcId=${aws_vpc.main.id} || exit 0",
+      # "sleep 60s",
 
-      # Terraform Enterprise deployment
-      "helm repo add hashicorp https://helm.releases.hashicorp.com",
-      "timeout 180 helm install terraform-enterprise hashicorp/terraform-enterprise --namespace ${var.tfe_kube_namespace} --values terraform.yaml || exit 0",
-      "sleep 180s",
+      # # Terraform Enterprise deployment
+      # "helm repo add hashicorp https://helm.releases.hashicorp.com",
+      # "timeout 180 helm install terraform-enterprise hashicorp/terraform-enterprise --namespace ${var.tfe_kube_namespace} --values terraform.yaml || exit 0",
+      # "sleep 180s",
 
-      # TFE Agent Service Account
-      "kubectl create --namespace ${var.tfe_kube_namespace}-agents -f terraform-agent-sa.yaml",
+      # # TFE Agent Service Account
+      # "kubectl create --namespace ${var.tfe_kube_namespace}-agents -f terraform-agent-sa.yaml",
 
       # GitLab Installer
       "mkdir -p ~/gitlab-installer",
