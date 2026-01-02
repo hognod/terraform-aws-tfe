@@ -12,7 +12,7 @@ resource "aws_route53_zone" "private" {
 
 data "aws_lb" "main" {
   depends_on = [
-    terraform_data.gitlab
+    terraform_data.bastion
   ]
 
   name = var.tfe_lb_name
@@ -22,6 +22,7 @@ resource "aws_route53_record" "tfe_lb" {
   zone_id = aws_route53_zone.private.zone_id
   name = var.tfe_domain
   type = "A"
+  ttl = 300
 
   alias {
     name = data.aws_lb.main.dns_name
@@ -34,6 +35,7 @@ resource "aws_route53_record" "gitlab" {
   zone_id = aws_route53_zone.private.zone_id
   name = var.gitlab_domain
   type = "A"
+  ttl = 300
   records = [
     aws_instance.gitlab.private_ip
   ]

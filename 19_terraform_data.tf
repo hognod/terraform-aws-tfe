@@ -21,16 +21,27 @@ resource "terraform_data" "bastion" {
     destination = "/home/${var.instance_user}/${var.prefix}.pem"
   }
 
+  provisioner "file" {
+    content     = var.tfe_license
+    destination = "/home/${var.instance_user}/terraform.hclic"
+  }
+
+  provisioner "file" {
+    content     = yamlencode(local.tfe_yaml)
+    destination = "/home/${var.instance_user}/terraform.yaml"
+  }
+
+  provisioner "file" {
+    content     = yamlencode(local.tfe_agent_service_account_yaml)
+    destination = "/home/${var.instance_user}/terraform-agent-sa.yaml"
+  }
+
   provisioner "remote-exec" {
     #on_failure = continue
 
     inline = [
       # prerequisites
-      "echo '${tls_private_key.main.private_key_pem}' > ~/${var.prefix}.pem",
       "chmod 400 ~/${var.prefix}.pem",
-      "echo ${var.tfe_license} > terraform.hclic",
-      "echo \"${yamlencode(local.tfe_yaml)}\" > terraform.yaml",
-      "echo \"${yamlencode(local.tfe_agent_service_account_yaml)}\" > terraform-agent-sa.yaml",
 
       # aws cli install
       "curl \"https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip\" -o \"awscliv2.zip\"",
@@ -83,7 +94,9 @@ resource "terraform_data" "bastion" {
 
 resource "terraform_data" "destroy" {
   depends_on = [
-    aws_eks_node_group.main
+    aws_eks_node_group.main,
+    aws_eks_access_entry.bastion,
+    aws_aws_eks_access_policy_association.bastion
   ]
 
   input = {
