@@ -63,10 +63,10 @@ resource "terraform_data" "bastion" {
       # TFE Settings
       "kubectl create namespace ${var.tfe_kube_namespace}",
 
-      # Secrets
-      "kubectl create secret docker-registry terraform-enterprise --namespace ${var.tfe_kube_namespace} --docker-server=images.releases.hashicorp.com --docker-username=terraform --docker-password=${var.tfe_license}",
-      "kubectl create secret generic tfe-secrets --namespace=${var.tfe_kube_namespace} --from-file=TFE_LICENSE=$(pwd)/terraform.hclic --from-literal=TFE_ENCRYPTION_PASSWORD=hashicorp --from-literal=TFE_DATABASE_PASSWORD=${var.db_password}",
-      "kubectl create secret tls tfe-certs --namespace=${var.tfe_kube_namespace} --cert=$(pwd)/cert/cert.pem --key=$(pwd)/cert/key.pem",
+      # # Secrets
+      # "kubectl create secret docker-registry terraform-enterprise --namespace ${var.tfe_kube_namespace} --docker-server=images.releases.hashicorp.com --docker-username=terraform --docker-password=${var.tfe_license}",
+      # "kubectl create secret generic tfe-secrets --namespace=${var.tfe_kube_namespace} --from-file=TFE_LICENSE=$(pwd)/terraform.hclic --from-literal=TFE_ENCRYPTION_PASSWORD=hashicorp --from-literal=TFE_DATABASE_PASSWORD=${var.db_password}",
+      # "kubectl create secret tls tfe-certs --namespace=${var.tfe_kube_namespace} --cert=$(pwd)/cert/cert.pem --key=$(pwd)/cert/key.pem",
 
       # # AWS Load Balancer Controller deployment
       # "helm repo add eks https://aws.github.io/eks-charts",
