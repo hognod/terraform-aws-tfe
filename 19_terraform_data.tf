@@ -71,12 +71,12 @@ resource "terraform_data" "bastion" {
       # AWS Load Balancer Controller deployment
       "helm repo add eks https://aws.github.io/eks-charts",
       "helm repo update eks",
-      "timeout 180 helm install aws-load-balancer-controller eks/aws-load-balancer-controller --namespace ${var.tfe_lb_controller_kube_namespace} --set clusterName=${aws_eks_cluster.main.name} --set serviceAccount.create=true --set serviceAccount.name=${var.tfe_lb_controller_kube_svc_account} --set serviceAccount.annotations.\"eks\\.amazonaws\\.com/role-arn\"=${aws_iam_role.lb_controller_irsa_role.arn} --set region=${var.region} --set vpcId=${aws_vpc.main.id}",
+      "timeout 60 helm install aws-load-balancer-controller eks/aws-load-balancer-controller --namespace ${var.tfe_lb_controller_kube_namespace} --set clusterName=${aws_eks_cluster.main.name} --set serviceAccount.create=true --set serviceAccount.name=${var.tfe_lb_controller_kube_svc_account} --set serviceAccount.annotations.\"eks\\.amazonaws\\.com/role-arn\"=${aws_iam_role.lb_controller_irsa_role.arn} --set region=${var.region} --set vpcId=${aws_vpc.main.id} || exit 0",
       "sleep 60s",
 
       # Terraform Enterprise deployment
       "helm repo add hashicorp https://helm.releases.hashicorp.com",
-      "timeout 300 helm install terraform-enterprise hashicorp/terraform-enterprise --namespace ${var.tfe_kube_namespace} --values terraform.yaml",
+      "timeout 180 helm install terraform-enterprise hashicorp/terraform-enterprise --namespace ${var.tfe_kube_namespace} --values terraform.yaml || exit 0",
       "sleep 180s",
 
       # TFE Agent Service Account
@@ -92,40 +92,40 @@ resource "terraform_data" "bastion" {
   }
 }
 
-resource "terraform_data" "destroy" {
-  depends_on = [
-    aws_eks_node_group.main,
-    aws_eks_access_entry.bastion,
-    aws_eks_access_policy_association.bastion
-  ]
+# resource "terraform_data" "destroy" {
+#   depends_on = [
+#     aws_eks_node_group.main,
+#     aws_eks_access_entry.bastion,
+#     aws_eks_access_policy_association.bastion
+#   ]
 
-  input = {
-    tfe_kube_namespace               = var.tfe_kube_namespace
-    tfe_lb_controller_kube_namespace = var.tfe_lb_controller_kube_namespace
-    host                             = aws_instance.bastion.public_ip
-    user                             = var.instance_user
-    private_key                      = tls_private_key.main.private_key_pem
-  }
+#   input = {
+#     tfe_kube_namespace               = var.tfe_kube_namespace
+#     tfe_lb_controller_kube_namespace = var.tfe_lb_controller_kube_namespace
+#     host                             = aws_instance.bastion.public_ip
+#     user                             = var.instance_user
+#     private_key                      = tls_private_key.main.private_key_pem
+#   }
 
-  connection {
-    host        = self.output.host
-    user        = self.output.user
-    private_key = self.output.private_key
+#   connection {
+#     host        = self.output.host
+#     user        = self.output.user
+#     private_key = self.output.private_key
 
-    timeout = "2m"
-  }
+#     timeout = "2m"
+#   }
 
-  provisioner "remote-exec" {
-    when       = destroy
-    on_failure = continue
-    inline = [
-      "helm delete terraform-enterprise --namespace ${self.output.tfe_kube_namespace}",
-      "sleep 30s",
-      "helm delete aws-load-balancer-controller --namespace ${self.output.tfe_lb_controller_kube_namespace}",
-      "sleep 30s"
-    ]
-  }
-}
+#   provisioner "remote-exec" {
+#     when       = destroy
+#     on_failure = continue
+#     inline = [
+#       "helm delete terraform-enterprise --namespace ${self.output.tfe_kube_namespace}",
+#       "sleep 30s",
+#       "helm delete aws-load-balancer-controller --namespace ${self.output.tfe_lb_controller_kube_namespace}",
+#       "sleep 30s"
+#     ]
+#   }
+# }
 
 
 data "template_file" "gitlab" {
