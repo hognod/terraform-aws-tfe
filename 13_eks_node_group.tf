@@ -1,7 +1,5 @@
 resource "aws_eks_node_group" "main" {
   depends_on = [
-    aws_eks_addon.kube_proxy,
-    aws_eks_addon.core_dns,
     aws_eks_addon.vpc_cni
   ]
 

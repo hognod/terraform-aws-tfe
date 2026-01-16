@@ -1,4 +1,14 @@
 resource "aws_eks_cluster" "main" {
+  depends_on = [
+    aws_vpc_endpoint.eks,
+    aws_vpc_endpoint.ec2,
+    aws_vpc_endpoint.ecr_api,
+    aws_vpc_endpoint.ecr_dkr,
+    aws_vpc_endpoint.elb,
+    aws_vpc_endpoint.sts,
+    aws_vpc_endpoint.s3
+  ]
+
   name     = "${var.prefix}-eks-cluster"
   role_arn = aws_iam_role.eks_cluster.arn
 

@@ -125,16 +125,17 @@ data "template_file" "gitlab" {
     gitlab_domain = var.gitlab_domain
     cert_path     = "/home/${var.instance_user}/cert/service.crt"
     key_path      = "/home/${var.instance_user}/cert/service.key"
+    temp_password = "temp_password"
   }
 }
 
 resource "terraform_data" "gitlab" {
   depends_on = [
-    terraform_data.bastion
+    terraform_data.public_bastion
   ]
 
   connection {
-    bastion_host        = aws_instance.bastion.public_ip
+    bastion_host        = aws_instance.public_bastion.public_ip
     bastion_user        = var.instance_user
     bastion_private_key = tls_private_key.main.private_key_pem
 
@@ -161,7 +162,7 @@ resource "terraform_data" "gitlab" {
       "sudo update-ca-certificates",
 
       "echo 'export LANG=en_US.UTF-8' >> ~/.bashrc",
-      "sudo dpkg -i ~/gitlab-installer/*.deb",
+      "sudo dnf install --skip-broken --disablerepo="*" --nogpgcheck -y ~/gitlab-installer/*.rpm",
       "sudo mv ~/gitlab.rb /etc/gitlab/gitlab.rb",
       "sudo mkdir /etc/gitlab/trusted-certs",
       "sudo cp ~/cert/ca.crt /etc/gitlab/trusted-certs",
