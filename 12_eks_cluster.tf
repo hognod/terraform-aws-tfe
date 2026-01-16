@@ -63,7 +63,7 @@ resource "aws_eks_access_policy_association" "main" {
 ############### Bastion EC2 -> EKS Cluster Access 권한(AWS Credential 입력없이 ~/.kube/config 작성) ###############
 resource "aws_eks_access_entry" "bastion" {
   cluster_name  = aws_eks_cluster.main.name
-  principal_arn = aws_iam_role.bastion_eks_access_role.arn
+  principal_arn = aws_iam_role.private_bastion_role.arn
 
   tags = {
     Name = "${var.prefix}-bastion-eks-access-entry"

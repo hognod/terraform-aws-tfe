@@ -3,7 +3,7 @@ locals {
     clusterName = aws_eks_cluster.main.name
 
     image = {
-      repository = aws_ecr_repository.repository_url
+      repository = aws_ecr_repository.main.repository_url
       tag        = "aws-load-balancer-controller"
     }
 
@@ -65,7 +65,7 @@ locals {
         "service.beta.kubernetes.io/aws-load-balancer-backend-protocol" = "tcp"
         "service.beta.kubernetes.io/aws-load-balancer-internal"         = "true"
         "service.beta.kubernetes.io/aws-load-balancer-subnets"          = "${aws_subnet.private-a.id},${aws_subnet.private-c.id}"
-        "service.beta.kubernetes.io/aws-load-balancer-security-groups"  = "${aws_security_troup.lb.id}"
+        "service.beta.kubernetes.io/aws-load-balancer-security-groups"  = "${aws_security_group.lb.id}"
       }
       type = "LoadBalancer"
       port = 443
@@ -81,7 +81,7 @@ locals {
       variables = {
         # TFE configuration settings
         TFE_HOSTNAME           = var.tfe_domain
-        TFE_RUN_PIPELINE_IMAGE = "${aws_ecr_repository.main.url}:tfc-agent"
+        TFE_RUN_PIPELINE_IMAGE = "${aws_ecr_repository.main.repository_url}:tfc-agent"
 
         # Database settings
         TFE_DATABASE_HOST       = aws_db_instance.main.endpoint
