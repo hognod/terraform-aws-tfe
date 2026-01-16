@@ -5,7 +5,7 @@ variable "region" {}
 
 variable "prefix" {
   type    = string
-  default = "tfe"
+  default = "mirae"
 }
 
 # Instance
@@ -16,6 +16,7 @@ variable "instance_ami_id" {
 
     ubuntu 20.04 : ami-09eb4311cbaecf89d
     ubuntu 22.04 : ami-05d2438ca66594916
+    Amazon Linux 2023 kernel-6.1 : ami-0b818a04bc9c2133c
   EOT
 }
 
@@ -28,8 +29,7 @@ variable "windows_instance_ami_id" {
 }
 
 variable "instance_user" {
-  type    = string
-  default = "ubuntu"
+  type = string
 }
 
 variable "instance_type" {

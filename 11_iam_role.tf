@@ -1,5 +1,5 @@
 ############### Bastion EC2 -> EKS Cluster Access 권한(AWS Credential 입력없이 ~/.kube/config 작성) ###############
-data "aws_iam_policy_document" "bastion_eks_access_trust_relationship" {
+data "aws_iam_policy_document" "private_bastion_trust_relationship" {
   statement {
     effect  = "Allow"
     actions = ["sts:AssumeRole"]
@@ -11,18 +11,19 @@ data "aws_iam_policy_document" "bastion_eks_access_trust_relationship" {
   }
 }
 
-resource "aws_iam_role" "bastion_eks_access_role" {
-  name = "${var.prefix}-bastion-eks-access-role"
+resource "aws_iam_role" "private_bastion_role" {
+  name = "${var.prefix}-bastion-role"
   path = "/"
 
-  assume_role_policy = data.aws_iam_policy_document.bastion_eks_access_trust_relationship.json
+  assume_role_policy = data.aws_iam_policy_document.private_bastion_trust_relationship.json
 
   tags = {
-    Name = "${var.prefix}-bastion-eks-access-role"
+    Name = "${var.prefix}-bastion-role"
   }
 }
 
-data "aws_iam_policy_document" "bastion_eks_access_policy" {
+//EKS Access
+data "aws_iam_policy_document" "private_bastion_eks_policy" {
   statement {
     effect = "Allow"
     actions = [
@@ -35,14 +36,59 @@ data "aws_iam_policy_document" "bastion_eks_access_policy" {
   }
 }
 
-resource "aws_iam_policy" "bastion_eks_access_policy" {
-  name   = "${var.prefix}-bastion-eks-access-policy"
-  policy = data.aws_iam_policy_document.bastion_eks_access_policy.json
+resource "aws_iam_policy" "private_bastion_eks_policy" {
+  name   = "${var.prefix}-bastion-eks-policy"
+  policy = data.aws_iam_policy_document.private_bastion_eks_policy.json
 }
 
-resource "aws_iam_role_policy_attachment" "bastion_eks_access_policy_attachment" {
-  role       = aws_iam_role.bastion_eks_access_role.name
-  policy_arn = aws_iam_policy.bastion_eks_access_policy.arn
+resource "aws_iam_role_policy_attachment" "bastion_eks_policy_attachment" {
+  role       = aws_iam_role.private_bastion_role.name
+  policy_arn = aws_iam_policy.private_bastion_eks_policy.arn
+}
+
+//ECR Access
+data "aws_iam_policy_document" "private_bastion_ecr_policy" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:GetRepositoryPolicy",
+      "ecr:DescribeRepositories",
+      "ecr:ListImages",
+      "ecr:DescribeImages",
+      "ecr:BatchGetImage",
+      "ecr:GetLifecyclePolicy",
+      "ecr:GetLifecyclePolicyPreview",
+      "ecr:ListTagsForResource",
+      "ecr:DescribeImageScanFindings",
+      "ecr:InitiateLayerUpload",
+      "ecr:UploadLayerPart",
+      "ecr:CompleteLayerUpload",
+      "ecr:PutImage"
+    ]
+    resources = [
+      aws_ecr_repository.main.arn
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "ecr:GetAuthorizationToken"
+    ]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_policy" "private_bastion_ecr_policy" {
+  name   = "${var.prefix}-bastion-ecr-policy"
+  policy = data.aws_iam_policy_document.private_bastion_ecr_policy.json
+}
+
+resource "aws_iam_role_policy_attachment" "bastion_ecr_policy_attachment" {
+  role       = aws_iam_role.private_bastion_role.name
+  policy_arn = aws_iam_policy.private_bastion_ecr_policy.arn
 }
 
 ############### EKS Cluster ###############

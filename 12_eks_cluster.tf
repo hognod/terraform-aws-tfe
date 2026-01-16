@@ -2,6 +2,10 @@ resource "aws_eks_cluster" "main" {
   name     = "${var.prefix}-eks-cluster"
   role_arn = aws_iam_role.eks_cluster.arn
 
+  # Kube-porxy, AWS-CNI, CoreDNS 리소스 Add-On 사용
+  # true 지정 시 Terraform 자체적으로 Kube-porxy, AWS-CNI, CoreDNS 프로비저닝
+  bootstrap_self_managed_addons = false
+
   access_config {
     authentication_mode = "API" # API_AND_CONFIG_MAP / CONFIG_MAP / API
   }
@@ -70,10 +74,26 @@ resource "aws_eks_access_policy_association" "bastion" {
   cluster_name = aws_eks_cluster.main.name
 
   access_scope {
-    type = "cluster"
+    type       = "cluster"
     namespaces = []
   }
 
-  policy_arn = "arn:${data.aws_partition.current.partition}:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+  policy_arn    = "arn:${data.aws_partition.current.partition}:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
   principal_arn = aws_iam_role.bastion_eks_access_role.arn
+}
+
+############### Add-on ###############
+resource "aws_eks_addon" "kube_proxy" {
+  cluster_name = aws_eks_cluster.main.name
+  addon_name   = "kube-proxy"
+}
+
+resource "aws_eks_addon" "kube_proxy" {
+  cluster_name = aws_eks_cluster.main.name
+  addon_name   = "CoreDNS"
+}
+
+resource "aws_eks_addon" "kube_proxy" {
+  cluster_name = aws_eks_cluster.main.name
+  addon_name   = "Amazon VPC CNI"
 }

@@ -1,20 +1,20 @@
-resource "terraform_data" "bastion" {
+resource "terraform_data" "public_bastion" {
   depends_on = [
     aws_eks_node_group.main
   ]
 
   connection {
-    host        = aws_instance.bastion.public_ip
+    host        = aws_instance.public_bastion.public_ip
     user        = var.instance_user
     private_key = tls_private_key.main.private_key_pem
 
     timeout = "2m"
   }
 
-  provisioner "file" {
-    source      = "./cert"
-    destination = "/home/${var.instance_user}"
-  }
+  # provisioner "file" {
+  #   source      = "./cert"
+  #   destination = "/home/${var.instance_user}"
+  # }
 
   provisioner "file" {
     content     = tls_private_key.main.private_key_pem
@@ -24,6 +24,11 @@ resource "terraform_data" "bastion" {
   provisioner "file" {
     content     = var.tfe_license
     destination = "/home/${var.instance_user}/terraform.hclic"
+  }
+
+  provisioner "file" {
+    content     = yamlencode(local.aws_load_balancer_controller_yaml)
+    destination = "/home/${var.instance_user}/aws-load-balancer-controller.yaml"
   }
 
   provisioner "file" {

@@ -1,6 +1,26 @@
 locals {
+  aws_load_balancer_controller_yaml = {
+    clusterName = aws_eks_cluster.main.name
+
+    image = {
+      repository = aws_ecr_repository.repository_url
+      tag        = "aws-load-balancer-controller"
+    }
+
+    serviceAccount = {
+      create = true
+      name   = var.tfe_lb_controller_kube_svc_account
+      annotations = {
+        "eks.amazonaws.com/role-arn" = aws_iam_role.lb_controller_irsa_role.arn
+      }
+
+      region = var.region
+      vpcId  = aws_vpc.main.id
+    }
+  }
+
   tfe_yaml = {
-    replicaCount = 2
+    replicaCount = 1
 
     tls = {
       certificateSecret = "tfe-certs"
@@ -8,9 +28,19 @@ locals {
     }
 
     image = {
-      repository = "images.releases.hashicorp.com"
-      name       = "hashicorp/terraform-enterprise"
-      tag        = "v202507-1"
+      repository = split("/", aws_ecr_repository.main.url)[0]
+      name       = split("/", aws_ecr_repository.main.url)[1]
+      tag        = "terraform-enterprise"
+    }
+
+    tfe = {
+      metrics = {
+        enable    = false
+        httpPort  = 9090
+        httpsPort = 9091
+      }
+      privateHttpPort  = 8080
+      privateHttpsPort = 8443
     }
 
     # TFE가 S3 사용하는 용도 Agent용은 별도로 생성 필요
@@ -28,16 +58,6 @@ locals {
       }
     }
 
-    tfe = {
-      privateHttpPort  = 8080
-      privateHttpsPort = 8443
-      metrics = {
-        enable    = false
-        httpPort  = 9090
-        httpsPort = 9091
-      }
-    }
-
     service = {
       annotations = {
         "service.beta.kubernetes.io/aws-load-balancer-name"             = var.tfe_lb_name
@@ -45,7 +65,7 @@ locals {
         "service.beta.kubernetes.io/aws-load-balancer-backend-protocol" = "tcp"
         "service.beta.kubernetes.io/aws-load-balancer-internal"         = "true"
         "service.beta.kubernetes.io/aws-load-balancer-subnets"          = "${aws_subnet.private-a.id},${aws_subnet.private-c.id}"
-        "service.beta.kubernetes.io/aws-load-balancer-security-groups"  = ""
+        "service.beta.kubernetes.io/aws-load-balancer-security-groups"  = "${aws_security_troup.lb.id}"
       }
       type = "LoadBalancer"
       port = 443
@@ -60,7 +80,8 @@ locals {
 
       variables = {
         # TFE configuration settings
-        TFE_HOSTNAME = var.tfe_domain
+        TFE_HOSTNAME           = var.tfe_domain
+        TFE_RUN_PIPELINE_IMAGE = "${aws_ecr_repository.main.url}:tfc-agent"
 
         # Database settings
         TFE_DATABASE_HOST       = aws_db_instance.main.endpoint
@@ -69,24 +90,17 @@ locals {
         TFE_DATABASE_PARAMETERS = "sslmode=require"
 
         # Object storage settings
-        TFE_OBJECT_STORAGE_TYPE                                 = "s3"
-        TFE_OBJECT_STORAGE_S3_BUCKET                            = aws_s3_bucket.main.id
-        TFE_OBJECT_STORAGE_S3_REGION                            = var.region
-        TFE_OBJECT_STORAGE_S3_USE_INSTANCE_PROFILE              = "true"
-        TFE_OBJECT_STORAGE_S3_SERVER_SIDE_ENCRYPTION            = "AES256"
-        TFE_OBJECT_STORAGE_S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID = ""
+        TFE_OBJECT_STORAGE_TYPE                      = "s3"
+        TFE_OBJECT_STORAGE_S3_BUCKET                 = aws_s3_bucket.main.id
+        TFE_OBJECT_STORAGE_S3_REGION                 = var.region
+        TFE_OBJECT_STORAGE_S3_USE_INSTANCE_PROFILE   = "true"
+        TFE_OBJECT_STORAGE_S3_SERVER_SIDE_ENCRYPTION = "AES256"
+        TFE_OBJECT_STORAGE_S3_USE_INSTANCE_PROFILE   = true
 
         # Redis settings
         TFE_REDIS_HOST     = "${aws_elasticache_cluster.main.cache_nodes[0].address}:${aws_elasticache_cluster.main.cache_nodes[0].port}"
         TFE_REDIS_USE_AUTH = "false"
         TFE_REDIS_USE_TLS  = "false"
-      }
-    }
-
-    resources = {
-      requests = {
-        memory = "8192Mi"
-        cpu    = "2000m"
       }
     }
   }

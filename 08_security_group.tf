@@ -1,7 +1,26 @@
+## Endpoints
+resource "aws_security_group" "endpoint" {
+  name   = "${var.prefix}-endpoint"
+  vpc_id = aws_vpc.main.id
+
+  ingress {
+    from_port = 443
+    to_port   = 443
+    protocol  = "TCP"
+    cidr_blocks = [
+      aws_vpc.main.cidr_block
+    ]
+  }
+
+  tags = {
+    Name = "${var.prefix}-endpoint"
+  }
+}
+
 ############### Instance ###############
-## Bastion
-resource "aws_security_group" "bastion" {
-  name   = "${var.prefix}-bastion"
+## Public Bastion
+resource "aws_security_group" "public-bastion" {
+  name   = "${var.prefix}-public-bastion"
   vpc_id = aws_vpc.main.id
 
   ingress {
@@ -42,7 +61,46 @@ resource "aws_security_group" "bastion" {
   }
 
   tags = {
-    Name = "${var.prefix}-bastion"
+    Name = "${var.prefix}-public-bastion"
+  }
+}
+
+## Private Bastion
+resource "aws_security_group" "private-bastion" {
+  name   = "${var.prefix}-private-bastion"
+  vpc_id = aws_vpc.main.id
+
+  ingress {
+    from_port = 22
+    to_port   = 22
+    protocol  = "TCP"
+    cidr_blocks = [
+      aws_subnet.public-a.cidr_block
+    ]
+  }
+
+  egress {
+    from_port = 80
+    to_port   = 80
+    protocol  = "TCP"
+    cidr_blocks = [
+      aws_subnet.private-a.cidr_block,
+      aws_subnet.private-b.cidr_block
+    ]
+  }
+
+  egress {
+    from_port = 443
+    to_port   = 443
+    protocol  = "TCP"
+    cidr_blocks = [
+      aws_subnet.private-a.cidr_block,
+      aws_subnet.private-b.cidr_block
+    ]
+  }
+
+  tags = {
+    Name = "${var.prefix}-private-bastion"
   }
 }
 
@@ -94,7 +152,6 @@ resource "aws_security_group" "gitlab" {
     to_port   = 443
     protocol  = "TCP"
     cidr_blocks = [
-      aws_subnet.public-a.cidr_block, # Bundle Unload
       aws_subnet.private-a.cidr_block,
       aws_subnet.private-c.cidr_block
     ]
@@ -105,7 +162,6 @@ resource "aws_security_group" "gitlab" {
     to_port   = 443
     protocol  = "TCP"
     cidr_blocks = [
-      aws_subnet.public-a.cidr_block, # Bundle Download
       aws_subnet.private-a.cidr_block,
       aws_subnet.private-c.cidr_block
     ]
@@ -113,6 +169,58 @@ resource "aws_security_group" "gitlab" {
 
   tags = {
     Name = "${var.prefix}-gitlab"
+  }
+}
+
+############### Load Balancer ###############
+resource "aws_security_group" "lb" {
+  name   = "hognod-lb"
+  vpc_id = aws_vpc.main.id
+
+  ingress {
+    from_port = 443
+    to_port   = 443
+    protocol  = "TCP"
+    cidr_blocks = [
+      aws_subnet.public-a.cidr_block, # windows bastion
+      aws_subnet.private-a.cidr_block,
+      aws_subnet.private-b.cidr_block
+    ]
+  }
+
+  ingress {
+    from_port = 8446
+    to_port   = 8446
+    protocol  = "TCP"
+    cidr_blocks = [
+      aws_subnet.public-a.cidr_block, # windows bastion
+      aws_subnet.private-a.cidr_block,
+      aws_subnet.private-b.cidr_block
+    ]
+  }
+
+  egress {
+    from_port = 8443
+    to_port   = 8443
+    protocol  = "TCP"
+    cidr_blocks = [
+      aws_subnet.private-a.cidr_block,
+      aws_subnet.private-b.cidr_block
+    ]
+  }
+
+  ingress {
+    from_port = 8446
+    to_port   = 8446
+    protocol  = "TCP"
+    cidr_blocks = [
+      aws_subnet.private-a.cidr_block,
+      aws_subnet.private-b.cidr_block
+    ]
+  }
+
+  tags = {
+    Name = "hognod-lb"
   }
 }
 
@@ -126,20 +234,10 @@ resource "aws_security_group" "eks-cluster" {
     to_port   = 443
     protocol  = "TCP"
     cidr_blocks = [
-      aws_subnet.public-a.cidr_block
-    ]
-    description = "Allow TCP/443 (HTTPS) inbound to EKS cluster from bastion."
-  }
-
-  ingress {
-    from_port = 443
-    to_port   = 443
-    protocol  = "TCP"
-    cidr_blocks = [
       aws_subnet.private-a.cidr_block,
       aws_subnet.private-c.cidr_block
     ]
-    description = "Allow TCP/443 (HTTPS) inbound to EKS cluster from node group."
+    description = "Allow TCP/443 (HTTPS) inbound to EKS cluster from node group & private bastion."
   }
 
   egress {
@@ -162,17 +260,6 @@ resource "aws_security_group" "node_group" {
   name   = "${var.prefix}-node-group"
   vpc_id = aws_vpc.main.id
 
-  # ingress {
-  #   from_port = 443
-  #   to_port   = 443
-  #   protocol  = "TCP"
-  #   cidr_blocks = [
-  #     aws_subnet.private-a.cidr_block,
-  #     aws_subnet.private-b.cidr_block
-  #   ]
-  #   description = "Allow TCP/443 (HTTPS) inbound to node group from TFE load balancer."
-  # }
-
   ingress {
     from_port = 8446
     to_port   = 8446
@@ -181,19 +268,8 @@ resource "aws_security_group" "node_group" {
       aws_subnet.private-a.cidr_block,
       aws_subnet.private-c.cidr_block
     ]
-    description = "Allow TCP/443 (HTTPS) inbound to node group from TFE load balancer."
+    description = "Allow TCP/8446 (HTTPS) inbound to node group from TFE load balancer.(AdminHttpsPort)"
   }
-
-  # ingress {
-  #   from_port = 8080
-  #   to_port   = 8080
-  #   protocol  = "TCP"
-  #   cidr_blocks = [
-  #     aws_subnet.private-a.cidr_block,
-  #     aws_subnet.private-b.cidr_block
-  #   ]
-  #   description = "Allow TCP/8080 or specified port (TFE HTTP) inbound to node group from TFE load balancer."
-  # }
 
   ingress {
     from_port = 8443

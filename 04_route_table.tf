@@ -24,11 +24,6 @@ resource "aws_route_table" "private-a" {
     gateway_id = "local"
   }
 
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.main.id
-  }
-
   tags = {
     Name = "${var.prefix}-private-rtb-a"
   }
@@ -40,11 +35,6 @@ resource "aws_route_table" "private-c" {
   route {
     cidr_block = aws_vpc.main.cidr_block
     gateway_id = "local"
-  }
-
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.main.id
   }
 
   tags = {
