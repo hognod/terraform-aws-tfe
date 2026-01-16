@@ -76,7 +76,7 @@ resource "aws_instance" "gitlab" {
     volume_size = var.instance_volume_size
   }
 
-  subnet_id              = aws_subnet.private-a.id
+  subnet_id              = aws_subnet.private-c.id
   vpc_security_group_ids = [aws_security_group.gitlab.id]
   private_ip             = cidrhost(aws_subnet.private-c.cidr_block, 101)
 
