@@ -79,7 +79,7 @@ resource "aws_eks_access_policy_association" "bastion" {
   }
 
   policy_arn    = "arn:${data.aws_partition.current.partition}:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-  principal_arn = aws_iam_role.bastion_eks_access_role.arn
+  principal_arn = aws_iam_role.private_bastion_role.arn
 }
 
 ############### Add-on ###############

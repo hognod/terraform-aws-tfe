@@ -184,7 +184,7 @@ resource "aws_security_group" "lb" {
     cidr_blocks = [
       aws_subnet.public-a.cidr_block, # windows bastion
       aws_subnet.private-a.cidr_block,
-      aws_subnet.private-b.cidr_block
+      aws_subnet.private-c.cidr_block
     ]
   }
 
@@ -195,7 +195,7 @@ resource "aws_security_group" "lb" {
     cidr_blocks = [
       aws_subnet.public-a.cidr_block, # windows bastion
       aws_subnet.private-a.cidr_block,
-      aws_subnet.private-b.cidr_block
+      aws_subnet.private-c.cidr_block
     ]
   }
 
@@ -205,7 +205,7 @@ resource "aws_security_group" "lb" {
     protocol  = "TCP"
     cidr_blocks = [
       aws_subnet.private-a.cidr_block,
-      aws_subnet.private-b.cidr_block
+      aws_subnet.private-c.cidr_block
     ]
   }
 
@@ -215,7 +215,7 @@ resource "aws_security_group" "lb" {
     protocol  = "TCP"
     cidr_blocks = [
       aws_subnet.private-a.cidr_block,
-      aws_subnet.private-b.cidr_block
+      aws_subnet.private-c.cidr_block
     ]
   }
 

@@ -28,8 +28,8 @@ locals {
     }
 
     image = {
-      repository = split("/", aws_ecr_repository.main.url)[0]
-      name       = split("/", aws_ecr_repository.main.url)[1]
+      repository = split("/", aws_ecr_repository.main.repository_url)[0]
+      name       = split("/", aws_ecr_repository.main.repository_url)[1]
       tag        = "terraform-enterprise"
     }
 
