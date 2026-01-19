@@ -126,7 +126,7 @@ resource "terraform_data" "gitlab" {
       "sudo update-ca-certificates",
 
       "echo 'export LANG=en_US.UTF-8' >> ~/.bashrc",
-      "sudo dnf install --skip-broken --disablerepo="*" --nogpgcheck -y ~/gitlab-installer/*.rpm",
+      "sudo dnf install --skip-broken --disablerepo=\"*\" --nogpgcheck -y ~/gitlab-installer/*.rpm",
       "sudo mv ~/gitlab.rb /etc/gitlab/gitlab.rb",
       "sudo mkdir /etc/gitlab/trusted-certs",
       "sudo cp ~/cert/ca.crt /etc/gitlab/trusted-certs",
