@@ -174,7 +174,7 @@ resource "aws_security_group" "gitlab" {
 
 ############### Load Balancer ###############
 resource "aws_security_group" "lb" {
-  name   = "hognod-lb"
+  name   = "${var.prefix}-lb"
   vpc_id = aws_vpc.main.id
 
   ingress {
@@ -209,7 +209,7 @@ resource "aws_security_group" "lb" {
     ]
   }
 
-  ingress {
+  egress {
     from_port = 8446
     to_port   = 8446
     protocol  = "TCP"
@@ -220,7 +220,7 @@ resource "aws_security_group" "lb" {
   }
 
   tags = {
-    Name = "hognod-lb"
+    Name = "${var.prefix}-lb"
   }
 }
 

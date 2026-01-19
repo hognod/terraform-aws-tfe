@@ -11,11 +11,6 @@ resource "terraform_data" "public_bastion" {
     timeout = "2m"
   }
 
-  # provisioner "file" {
-  #   source      = "./cert"
-  #   destination = "/home/${var.instance_user}"
-  # }
-
   provisioner "file" {
     content     = tls_private_key.main.private_key_pem
     destination = "/home/${var.instance_user}/${var.prefix}.pem"
@@ -27,19 +22,24 @@ resource "terraform_data" "public_bastion" {
   }
 
   provisioner "file" {
-    content     = yamlencode(local.aws_load_balancer_controller_yaml)
-    destination = "/home/${var.instance_user}/aws-load-balancer-controller.yaml"
+    source = "${path.module}/config/nginx.conf"
+    destination = "/home/${var.instance_user}/nginx.conf"
   }
 
-  provisioner "file" {
-    content     = yamlencode(local.tfe_yaml)
-    destination = "/home/${var.instance_user}/terraform.yaml"
-  }
+  # provisioner "file" {
+  #   content     = yamlencode(local.aws_load_balancer_controller_yaml)
+  #   destination = "/home/${var.instance_user}/aws-load-balancer-controller.yaml"
+  # }
 
-  provisioner "file" {
-    content     = yamlencode(local.tfe_agent_service_account_yaml)
-    destination = "/home/${var.instance_user}/terraform-agent-sa.yaml"
-  }
+  # provisioner "file" {
+  #   content     = yamlencode(local.tfe_yaml)
+  #   destination = "/home/${var.instance_user}/terraform.yaml"
+  # }
+
+  # provisioner "file" {
+  #   content     = yamlencode(local.tfe_agent_service_account_yaml)
+  #   destination = "/home/${var.instance_user}/terraform-agent-sa.yaml"
+  # }
 
   provisioner "remote-exec" {
     script = "./scripts/init.sh"
@@ -49,14 +49,14 @@ resource "terraform_data" "public_bastion" {
     #on_failure = continue
 
     inline = [
-      # prerequisites
+      # # prerequisites
       "chmod 400 ~/${var.prefix}.pem",
 
-      # Kube config
-      "aws eks update-kubeconfig --region ${var.region} --name ${aws_eks_cluster.main.name}",
+      # # Kube config
+      # "aws eks update-kubeconfig --region ${var.region} --name ${aws_eks_cluster.main.name}",
 
-      # Create TFE Namespace.
-      "kubectl create namespace ${var.tfe_kube_namespace}",
+      # # Create TFE Namespace.
+      # "kubectl create namespace ${var.tfe_kube_namespace}",
 
       # # Secrets
       # "kubectl create secret docker-registry terraform-enterprise --namespace ${var.tfe_kube_namespace} --docker-server=images.releases.hashicorp.com --docker-username=terraform --docker-password=${var.tfe_license}",
@@ -82,44 +82,8 @@ resource "terraform_data" "public_bastion" {
   }
 }
 
-# resource "terraform_data" "destroy" {
-#   depends_on = [
-#     aws_eks_node_group.main,
-#     aws_eks_access_entry.bastion,
-#     aws_eks_access_policy_association.bastion
-#   ]
-
-#   input = {
-#     tfe_kube_namespace               = var.tfe_kube_namespace
-#     tfe_lb_controller_kube_namespace = var.tfe_lb_controller_kube_namespace
-#     host                             = aws_instance.bastion.public_ip
-#     user                             = var.instance_user
-#     private_key                      = tls_private_key.main.private_key_pem
-#   }
-
-#   connection {
-#     host        = self.output.host
-#     user        = self.output.user
-#     private_key = self.output.private_key
-
-#     timeout = "2m"
-#   }
-
-#   provisioner "remote-exec" {
-#     when       = destroy
-#     on_failure = continue
-#     inline = [
-#       "helm delete terraform-enterprise --namespace ${self.output.tfe_kube_namespace}",
-#       "sleep 30s",
-#       "helm delete aws-load-balancer-controller --namespace ${self.output.tfe_lb_controller_kube_namespace}",
-#       "sleep 30s"
-#     ]
-#   }
-# }
-
-
 data "template_file" "gitlab" {
-  template = file("${path.module}/gitlab.rb.tpl")
+  template = file("${path.module}/config/gitlab.rb.tpl")
 
   vars = {
     gitlab_domain = var.gitlab_domain
@@ -170,3 +134,53 @@ resource "terraform_data" "gitlab" {
     ]
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# resource "terraform_data" "destroy" {
+#   depends_on = [
+#     aws_eks_node_group.main,
+#     aws_eks_access_entry.bastion,
+#     aws_eks_access_policy_association.bastion
+#   ]
+
+#   input = {
+#     tfe_kube_namespace               = var.tfe_kube_namespace
+#     tfe_lb_controller_kube_namespace = var.tfe_lb_controller_kube_namespace
+#     host                             = aws_instance.bastion.public_ip
+#     user                             = var.instance_user
+#     private_key                      = tls_private_key.main.private_key_pem
+#   }
+
+#   connection {
+#     host        = self.output.host
+#     user        = self.output.user
+#     private_key = self.output.private_key
+
+#     timeout = "2m"
+#   }
+
+#   provisioner "remote-exec" {
+#     when       = destroy
+#     on_failure = continue
+#     inline = [
+#       "helm delete terraform-enterprise --namespace ${self.output.tfe_kube_namespace}",
+#       "sleep 30s",
+#       "helm delete aws-load-balancer-controller --namespace ${self.output.tfe_lb_controller_kube_namespace}",
+#       "sleep 30s"
+#     ]
+#   }
+# }
