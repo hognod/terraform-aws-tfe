@@ -60,6 +60,15 @@ EOF
 docker build --no-cache -t hashicorp/tfc-agent:v1 ~/tfc-agent
 docker save -o ~/tfc-agent.tar hashicorp/tfc-agent:v1
 
+# Bundle
+wget https://go.dev/dl/go1.25.3.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf ~/go1.25.3.linux-amd64.tar.gz
+echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
+source ~/.bashrc
+git clone --single-branch --branch=v0.15 --depth=1 https://github.com/hashicorp/terraform.git
+sudo go build -o /usr/local/bin/terraform-bundle ~/terraform/tools/terraform-bundle
+terraform-bundle package ~/terraform-bundle.hcl
+
 # Bundle nginx Image
 mkdir -p ~/nginx-bundle
 mv ~/nginx.conf ~/nginx-bundle

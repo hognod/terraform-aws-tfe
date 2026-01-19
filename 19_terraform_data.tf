@@ -26,6 +26,11 @@ resource "terraform_data" "public_bastion" {
     destination = "/home/${var.instance_user}/nginx.conf"
   }
 
+  provisioner "file" {
+    source = "${path.module}/config/terraform-bundle.hcl"
+    destination = "/home/${var.instance_user}/terraform-bundle.hcl"
+  }
+
   # provisioner "file" {
   #   content     = yamlencode(local.aws_load_balancer_controller_yaml)
   #   destination = "/home/${var.instance_user}/aws-load-balancer-controller.yaml"
@@ -77,7 +82,7 @@ resource "terraform_data" "public_bastion" {
       # # TFE Agent Service Account
       # "kubectl create --namespace ${var.tfe_kube_namespace}-agents -f terraform-agent-sa.yaml",
 
-      "scp -i ~/${var.prefix}.pem -r ~/gitlab-installer ${var.instance_user}@${aws_instance.gitlab.private_ip}:"
+      "scp -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem -r ~/gitlab-installer ${var.instance_user}@${aws_instance.gitlab.private_ip}:"
     ]
   }
 }
