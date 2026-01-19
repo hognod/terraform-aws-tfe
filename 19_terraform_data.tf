@@ -133,7 +133,35 @@ resource "terraform_data" "private_bastion" {
       "docker load -i ~/aws-load-balancer-controller.tar",
       "docker tag $(docker images public.ecr.aws/eks/aws-load-balancer-controller --format \"{{.Repository}}:{{.Tag}}\") ${aws_ecr_repository.main.repository_url}:aws-load-balancer-controller",
       "docker push ${aws_ecr_repository.main.repository_url}:aws-load-balancer-controller",
-      "rm -rf ~/aws-load-balancer-controller.tar"
+      "rm -rf ~/aws-load-balancer-controller.tar",
+
+      # Terraform Enterprise
+      "docker load -i ~/terraform-enterprise.tar",
+      "docker tag $(docker images images.releases.hashicorp.com/hashicorp/terraform-enterprise --format \"{{.Repository}}:{{.Tag}}\") ${aws_ecr_repository.main.repository_url}:terraform-enterprise",
+      "docker push ${aws_ecr_repository.main.repository_url}:terraform-enterprise",
+      "rm -rf ~/terraform-enterprise.tar",
+
+      # TFE Agent
+      "docker load -i ~/tfc-agent.tar",
+      "mkdir -p ~/tfc-agent",
+      "cp ~/cert/ca.crt ~/tfc-agent",
+      "cat > ~/tfc-agent/Dockerfile << 'EOF'",
+      "FROM hashicorp/tfc-agent:v1",
+      "USER root",
+      "ADD ca.crt /usr/local/share/ca-certificates",
+      "RUN update-ca-certificates",
+      "USER tfc-agent",
+      "EOF",
+      "docker build --no-cache -t hashicorp/tfc-agent:latest ~/tfc-agent",
+      "docker tag hashicorp/tfc-agent:latest ${aws_ecr_repository.main.repository_url}:tfc-agent",
+      "docker push ${aws_ecr_repository.main.repository_url}:tfc-agent",
+      "rm -rf ~/tfc-agent.tar",
+
+      # Bundle
+      "docker load -i ~/nginx-bundle.tar",
+      "docker tag nginx:bundle ${aws_ecr_repository.main.repository_url}:bundle",
+      "docker push ${aws_ecr_repository.main.repository_url}:bundle",
+      "rm -rf ~/nginx-bundle.tar"
     ]
   }
 }
