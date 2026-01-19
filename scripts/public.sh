@@ -21,24 +21,24 @@ sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/dock
 sudo sed -i 's/\$releasever/37/g' /etc/yum.repos.d/docker-ce.repo
 sudo dnf update
 sudo dnf download -y --resolve --alldeps docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin --destdir ~/docker-installer
-sudo dnf install --skip-broken --disablerepo="*" --nogpgcheck -y ~/docker-installer/*.rpm
+sudo dnf install --skip-broken --disablerepo="*" --nogpgcheck -q -y ~/docker-installer/*.rpm
 sudo systemctl start docker
 sudo systemctl enable docker
 sudo chmod 666 /var/run/docker.sock
 sudo usermod -aG docker ${USER}
 
 # AWS Load Balancer Controller Image
-docker pull public.ecr.aws/eks/aws-load-balancer-controller:v2.17.1
+docker pull -q public.ecr.aws/eks/aws-load-balancer-controller:v2.17.1
 docker save -o ~/aws-load-balancer-controller.tar public.ecr.aws/eks/aws-load-balancer-controller:v2.17.1
 
 # Terraform Enterprise Image
 cat ~/terraform.hclic |  docker login --username terraform images.releases.hashicorp.com --password-stdin
-docker pull images.releases.hashicorp.com/hashicorp/terraform-enterprise:v202507-1
+docker pull -q images.releases.hashicorp.com/hashicorp/terraform-enterprise:v202507-1
 docker save -o ~/terraform-enterprise.tar images.releases.hashicorp.com/hashicorp/terraform-enterprise:v202507-1
 
 # TFE Agent Image
 mkdir -p ~/tfc-agent
-docker pull hashicorp/tfc-agent:latest
+docker pull -q hashicorp/tfc-agent:latest
 cat > ~/tfc-agent/Dockerfile << EOF
 FROM hashicorp/tfc-agent:latest
 
@@ -61,18 +61,38 @@ docker build --no-cache -t hashicorp/tfc-agent:v1 ~/tfc-agent
 docker save -o ~/tfc-agent.tar hashicorp/tfc-agent:v1
 
 # Bundle
+sudo dnf install -q -y git
 wget https://go.dev/dl/go1.25.3.linux-amd64.tar.gz
 sudo tar -C /usr/local -xzf ~/go1.25.3.linux-amd64.tar.gz
 echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
 source ~/.bashrc
+sudo ln -s /usr/local/go/bin/go /usr/bin/go
 git clone --single-branch --branch=v0.15 --depth=1 https://github.com/hashicorp/terraform.git
-sudo go build -o /usr/local/bin/terraform-bundle ~/terraform/tools/terraform-bundle
+go build -o /usr/local/bin/terraform-bundle ~/terraform/tools/terraform-bundle
 terraform-bundle package ~/terraform-bundle.hcl
+mv ~/terraform_*.zip ~/bundle.zip
 
 # Bundle nginx Image
 mkdir -p ~/nginx-bundle
 mv ~/nginx.conf ~/nginx-bundle
+mv ~/bundle.zip ~/nginx-bundle
 docker pull nginx:alpine
+cat > ~/nginx-bundle/Dockerfil << EOF
+FROM nginx:alpine
+
+COPY bundle.zip /usr/share/nginx/html/providers/bundle.zip
+COPY nginx.conf /etc/nginx/nginx.conf
+RUN chmod -R 755 /usr/share/nginx/html/providers
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://localhost/providers/ || exit 1
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
+EOF
+docker build --no-cache -t nginx:bundle ~/nginx-bundle
+docker save -o ~/nginx-bundle.tar nginx:bundle
 
 # AWS Load Balancer Controller Helm Chart
 helm repo add eks https://aws.github.io/eks-charts

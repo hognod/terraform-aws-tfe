@@ -31,23 +31,8 @@ resource "terraform_data" "public_bastion" {
     destination = "/home/${var.instance_user}/terraform-bundle.hcl"
   }
 
-  # provisioner "file" {
-  #   content     = yamlencode(local.aws_load_balancer_controller_yaml)
-  #   destination = "/home/${var.instance_user}/aws-load-balancer-controller.yaml"
-  # }
-
-  # provisioner "file" {
-  #   content     = yamlencode(local.tfe_yaml)
-  #   destination = "/home/${var.instance_user}/terraform.yaml"
-  # }
-
-  # provisioner "file" {
-  #   content     = yamlencode(local.tfe_agent_service_account_yaml)
-  #   destination = "/home/${var.instance_user}/terraform-agent-sa.yaml"
-  # }
-
   provisioner "remote-exec" {
-    script = "./scripts/init.sh"
+    script = "./scripts/public.sh"
   }
 
   provisioner "remote-exec" {
@@ -82,7 +67,73 @@ resource "terraform_data" "public_bastion" {
       # # TFE Agent Service Account
       # "kubectl create --namespace ${var.tfe_kube_namespace}-agents -f terraform-agent-sa.yaml",
 
+      "scp -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/awscliv2.zip ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
+      "scp -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/kubectl ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
+      "scp -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem -r ~/docker-installer ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
+      "scp -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/aws-load-balancer-controller.tar ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
+      "scp -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/terraform-enterprise.tar ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
+      "scp -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/tfc-agent.tar ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
+      "scp -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/nginx-bundle.tar ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
+      "scp -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/linux-amd64/helm ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
+      "scp -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/aws-load-balancer-controller-*.tgz ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
+      "scp -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/terraform-enterprise-*.tgz ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
+
       "scp -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem -r ~/gitlab-installer ${var.instance_user}@${aws_instance.gitlab.private_ip}:"
+    ]
+  }
+}
+
+resource "terraform_data" "private_bastion" {
+  depends_on = [
+    terraform_data.public_bastion
+  ]
+
+  connection {
+    bastion_host        = aws_instance.public_bastion.public_ip
+    bastion_user        = var.instance_user
+    bastion_private_key = tls_private_key.main.private_key_pem
+
+    host        = aws_instance.private_bastion.private_ip
+    user        = var.instance_user
+    private_key = tls_private_key.main.private_key_pem
+
+    timeout = "2m"
+  }
+
+  provisioner "file" {
+    source      = "./cert"
+    destination = "/home/${var.instance_user}"
+  }
+
+  provisioner "file" {
+    content     = var.tfe_license
+    destination = "/home/${var.instance_user}/terraform.hclic"
+  }
+
+  provisioner "file" {
+    content     = yamlencode(local.aws_load_balancer_controller_yaml)
+    destination = "/home/${var.instance_user}/aws-load-balancer-controller.yaml"
+  }
+
+  provisioner "file" {
+    content     = yamlencode(local.tfe_yaml)
+    destination = "/home/${var.instance_user}/terraform.yaml"
+  }
+
+  provisioner "file" {
+    content     = yamlencode(local.tfe_agent_service_account_yaml)
+    destination = "/home/${var.instance_user}/terraform-agent-sa.yaml"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "aws ecr get-login-password --region ${var.region} | docker login --username AWS --password-stdin ${aws_ecr_repository.main.repository_url}",
+
+      # AWS Load Balancer Controller
+      "docker load -i ~/aws-load-balancer-controller.tar",
+      "docker tag $(docker images public.ecr.aws/eks/aws-load-balancer-controller --format \"{{.Repository}}:{{.Tag}}\") ${aws_ecr_repository.main.repository_url}:aws-load-balancer-controller",
+      "docker push ${aws_ecr_repository.main.repository_url}:aws-load-balancer-controller",
+      "rm -rf ~/aws-load-balancer-controller.tar"
     ]
   }
 }
@@ -131,7 +182,7 @@ resource "terraform_data" "gitlab" {
       "sudo update-ca-certificates",
 
       "echo 'export LANG=en_US.UTF-8' >> ~/.bashrc",
-      "sudo dnf install --skip-broken --disablerepo=\"*\" --nogpgcheck -y ~/gitlab-installer/*.rpm",
+      "sudo dnf install --skip-broken --disablerepo=\"*\" --nogpgcheck -q -y ~/gitlab-installer/*.rpm",
       "sudo mv ~/gitlab.rb /etc/gitlab/gitlab.rb",
       "sudo mkdir /etc/gitlab/trusted-certs",
       "sudo cp ~/cert/ca.crt /etc/gitlab/trusted-certs",
