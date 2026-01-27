@@ -15,7 +15,7 @@ echo 'alias k="kubectl"' >> ~/.bashrc
 rm -rf ~/kubectl
 
 # Docker install
-sudo dnf install --skip-broken --disablerepo="*" --nogpgcheck -q -y ~/docker-installer/*.rpm
+sudo dnf install --skip-broken --disablerepo="*" --nogpgcheck -qq -y ~/docker-installer/*.rpm
 sudo systemctl start docker
 sudo systemctl enable docker
 sudo chmod 666 /var/run/docker.sock

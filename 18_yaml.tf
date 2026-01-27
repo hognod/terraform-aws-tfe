@@ -117,7 +117,7 @@ locals {
     }
   }
 
-  bundle_yaml = [
+  _bundle_yaml_list = [
     {
       apiVersion = "apps/v1"
       kind       = "Deployment"
@@ -202,4 +202,6 @@ locals {
       }
     }
   ]
+
+  bundle_yaml = join("\n---\n", [for item in local._bundle_yaml_list : yamlencode(item)])
 }

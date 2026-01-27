@@ -21,7 +21,7 @@ sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/dock
 sudo sed -i 's/\$releasever/37/g' /etc/yum.repos.d/docker-ce.repo
 sudo dnf update
 sudo dnf download -y --resolve --alldeps docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin --destdir ~/docker-installer
-sudo dnf install --skip-broken --disablerepo="*" --nogpgcheck -q -y ~/docker-installer/*.rpm
+sudo dnf install --skip-broken --disablerepo="*" --nogpgcheck -qq -y ~/docker-installer/*.rpm
 sudo systemctl start docker
 sudo systemctl enable docker
 sudo chmod 666 /var/run/docker.sock
@@ -57,7 +57,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 # Switch back to the tfc-agent user as needed by Terraform agents.
 USER tfc-agent
 EOF
-docker build --no-cache -t hashicorp/tfc-agent:v1 ~/tfc-agent
+docker build -q --no-cache -t hashicorp/tfc-agent:v1 ~/tfc-agent
 docker save -o ~/tfc-agent.tar hashicorp/tfc-agent:v1
 
 # Bundle

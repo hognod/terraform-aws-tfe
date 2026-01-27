@@ -49,18 +49,18 @@ resource "terraform_data" "public_bastion" {
       # # TFE Agent Service Account
       # "kubectl create --namespace ${var.tfe_kube_namespace}-agents -f terraform-agent-sa.yaml",
 
-      "scp -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/awscliv2.zip ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
-      "scp -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/kubectl ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
-      "scp -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem -r ~/docker-installer ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
-      "scp -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/aws-load-balancer-controller.tar ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
-      "scp -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/terraform-enterprise.tar ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
-      "scp -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/tfc-agent.tar ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
-      "scp -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/nginx-bundle.tar ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
-      "scp -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/linux-amd64/helm ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
-      "scp -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/aws-load-balancer-controller-*.tgz ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
-      "scp -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/terraform-enterprise-*.tgz ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
+      "scp -q -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/awscliv2.zip ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
+      "scp -q -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/kubectl ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
+      "scp -q -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem -r ~/docker-installer ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
+      "scp -q -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/aws-load-balancer-controller.tar ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
+      "scp -q -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/terraform-enterprise.tar ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
+      "scp -q -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/tfc-agent.tar ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
+      "scp -q -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/nginx-bundle.tar ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
+      "scp -q -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/linux-amd64/helm ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
+      "scp -q -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/aws-load-balancer-controller-*.tgz ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
+      "scp -q -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem ~/terraform-enterprise-*.tgz ${var.instance_user}@${aws_instance.private_bastion.private_ip}:",
 
-      "scp -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem -r ~/gitlab-installer ${var.instance_user}@${aws_instance.gitlab.private_ip}:"
+      "scp -q -o StrictHostKeyChecking=no -i ~/${var.prefix}.pem -r ~/gitlab-installer ${var.instance_user}@${aws_instance.gitlab.private_ip}:"
     ]
   }
 }
@@ -108,7 +108,7 @@ resource "terraform_data" "private_bastion" {
   }
 
   provisioner "file" {
-    content     = yamlencode(local.bundle_yaml)
+    content     = local.bundle_yaml
     destination = "/home/${var.instance_user}/bundle.yaml"
   }
 
@@ -161,7 +161,7 @@ resource "terraform_data" "private_bastion" {
 
       # AWS Load Balancer Controller
       "helm install aws-load-balancer-controller ~/aws-load-balancer-controller-*.tgz --namespace ${var.tfe_lb_controller_kube_namespace} --values ~/aws-load-balancer-controller.yaml",
-      "sleep 30s",
+      "kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=aws-load-balancer-controller -n ${var.tfe_lb_controller_kube_namespace} --timeout=300s",
 
       # Terraform Enterprise
       ## Create TFE Namespace.
@@ -173,7 +173,7 @@ resource "terraform_data" "private_bastion" {
       "kubectl create secret tls tfe-certs --namespace=${var.tfe_kube_namespace} --cert=/home/${var.instance_user}/cert/cert.pem --key=/home/${var.instance_user}/cert/key.pem",
 
       "helm install terraform-enterprise terraform-enterprise-*.tgz --namespace ${var.tfe_kube_namespace} --values ~/terraform.yaml",
-      "sleep 30s",
+      "sleep 60s",
 
       # TFE Agent
       "kubectl create --namespace ${var.tfe_kube_namespace}-agents -f ~/terraform-agent-sa.yaml",
@@ -228,7 +228,7 @@ resource "terraform_data" "gitlab" {
       "sudo update-ca-certificates",
 
       "echo 'export LANG=en_US.UTF-8' >> ~/.bashrc",
-      "sudo dnf install --skip-broken --disablerepo=\"*\" --nogpgcheck -q -y ~/gitlab-installer/*.rpm",
+      "sudo dnf install --skip-broken --disablerepo=\"*\" --nogpgcheck -qq -y ~/gitlab-installer/*.rpm",
       "sudo mv ~/gitlab.rb /etc/gitlab/gitlab.rb",
       "sudo mkdir /etc/gitlab/trusted-certs",
       "sudo cp ~/cert/ca.crt /etc/gitlab/trusted-certs",
