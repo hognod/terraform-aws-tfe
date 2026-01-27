@@ -122,19 +122,19 @@ resource "terraform_data" "private_bastion" {
 
       #################### Image ####################
       # AWS Load Balancer Controller
-      "docker load -i ~/aws-load-balancer-controller.tar",
+      "docker load -q -i ~/aws-load-balancer-controller.tar",
       "docker tag $(docker images public.ecr.aws/eks/aws-load-balancer-controller --format \"{{.Repository}}:{{.Tag}}\") ${aws_ecr_repository.main.repository_url}:aws-load-balancer-controller",
       "docker push ${aws_ecr_repository.main.repository_url}:aws-load-balancer-controller",
       "rm -rf ~/aws-load-balancer-controller.tar",
 
       # Terraform Enterprise
-      "docker load -i ~/terraform-enterprise.tar",
+      "docker load -q -i ~/terraform-enterprise.tar",
       "docker tag $(docker images images.releases.hashicorp.com/hashicorp/terraform-enterprise --format \"{{.Repository}}:{{.Tag}}\") ${aws_ecr_repository.main.repository_url}:terraform-enterprise",
       "docker push ${aws_ecr_repository.main.repository_url}:terraform-enterprise",
       "rm -rf ~/terraform-enterprise.tar",
 
       # TFE Agent
-      "docker load -i ~/tfc-agent.tar",
+      "docker load -q -i ~/tfc-agent.tar",
       "mkdir -p ~/tfc-agent",
       "cp ~/cert/ca.crt ~/tfc-agent",
       "cat > ~/tfc-agent/Dockerfile << 'EOF'",
@@ -150,7 +150,7 @@ resource "terraform_data" "private_bastion" {
       "rm -rf ~/tfc-agent.tar",
 
       # Bundle
-      "docker load -i ~/nginx-bundle.tar",
+      "docker load -q -i ~/nginx-bundle.tar",
       "docker tag nginx:bundle ${aws_ecr_repository.main.repository_url}:bundle",
       "docker push ${aws_ecr_repository.main.repository_url}:bundle",
       "rm -rf ~/nginx-bundle.tar",
@@ -161,7 +161,8 @@ resource "terraform_data" "private_bastion" {
 
       # AWS Load Balancer Controller
       "helm install aws-load-balancer-controller ~/aws-load-balancer-controller-*.tgz --namespace ${var.tfe_lb_controller_kube_namespace} --values ~/aws-load-balancer-controller.yaml",
-      "kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=aws-load-balancer-controller -n ${var.tfe_lb_controller_kube_namespace} --timeout=300s",
+      "kubectl wait --for=condition=available deployment/aws-load-balancer-controller -n ${var.tfe_lb_controller_kube_namespace} --timeout=300s",
+      "sleep 30s",
 
       # Terraform Enterprise
       ## Create TFE Namespace.
