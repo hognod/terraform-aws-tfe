@@ -68,16 +68,16 @@ echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
 source ~/.bashrc
 sudo ln -s /usr/local/go/bin/go /usr/bin/go
 git clone -q --single-branch --branch=v0.15 --depth=1 https://github.com/hashicorp/terraform.git
-cd ~/terraform/tools/terraform-bundle && go build -o /usr/local/bin/terraform-bundle . && cd ~
-terraform-bundle package ~/terraform-bundle.hcl
+cd ~/terraform/tools/terraform-bundle && go build -o ~/terraform-bundle . && cd ~/
+~/terraform-bundle package ~/terraform-bundle.hcl
 mv ~/terraform_*.zip ~/bundle.zip
 
 # Bundle nginx Image
 mkdir -p ~/nginx-bundle
 mv ~/nginx.conf ~/nginx-bundle
 mv ~/bundle.zip ~/nginx-bundle
-docker pull nginx:alpine
-cat > ~/nginx-bundle/Dockerfil << EOF
+docker pull -q nginx:alpine
+cat > ~/nginx-bundle/Dockerfile << EOF
 FROM nginx:alpine
 
 COPY bundle.zip /usr/share/nginx/html/providers/bundle.zip
@@ -97,12 +97,12 @@ docker save -o ~/nginx-bundle.tar nginx:bundle
 # AWS Load Balancer Controller Helm Chart
 helm repo add eks https://aws.github.io/eks-charts
 helm repo update eks
-helm pull eks/aws-load-balancer-controller
+helm pull eks/aws-load-balancer-controller --destination ~/
 
 # Terraform Enterprise Helm Chart
 helm repo add hashicorp https://helm.releases.hashicorp.com
 helm repo update hashicorp
-helm pull hashicorp/terraform-enterprise
+helm pull hashicorp/terraform-enterprise --destination ~/
 
 # GitLab Installer
 mkdir -p ~/gitlab-installer
