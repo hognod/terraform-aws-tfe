@@ -144,7 +144,7 @@ resource "terraform_data" "private_bastion" {
       "RUN update-ca-certificates",
       "USER tfc-agent",
       "EOF",
-      "docker build --no-cache -t hashicorp/tfc-agent:latest ~/tfc-agent",
+      "docker build -q --no-cache -t hashicorp/tfc-agent:latest ~/tfc-agent",
       "docker tag hashicorp/tfc-agent:latest ${aws_ecr_repository.main.repository_url}:tfc-agent",
       "docker push -q ${aws_ecr_repository.main.repository_url}:tfc-agent",
       "rm -rf ~/tfc-agent.tar",
@@ -162,7 +162,7 @@ resource "terraform_data" "private_bastion" {
       # AWS Load Balancer Controller
       "helm install aws-load-balancer-controller ~/aws-load-balancer-controller-*.tgz --namespace ${var.tfe_lb_controller_kube_namespace} --values ~/aws-load-balancer-controller.yaml",
       "kubectl wait --for=condition=available deployment/aws-load-balancer-controller -n ${var.tfe_lb_controller_kube_namespace} --timeout=300s",
-      "sleep 30s",
+      "until kubectl get endpoints aws-load-balancer-webhook-service -n ${var.tfe_lb_controller_kube_namespace} -o jsonpath='{.subsets[0].addresses[0].ip}' 2>/dev/null | grep -q .; do echo 'Waiting for webhook endpoint...'; sleep 5; done",
 
       # Terraform Enterprise
       ## Create TFE Namespace.
@@ -225,9 +225,6 @@ resource "terraform_data" "gitlab" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo cp ~/cert/ca.crt /usr/local/share/ca-certificates",
-      "sudo update-ca-certificates",
-
       "echo 'export LANG=en_US.UTF-8' >> ~/.bashrc",
       "sudo dnf install --skip-broken --disablerepo=\"*\" --nogpgcheck -qq -y ~/gitlab-installer/*.rpm",
       "sudo mv ~/gitlab.rb /etc/gitlab/gitlab.rb",
