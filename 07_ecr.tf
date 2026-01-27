@@ -1,5 +1,5 @@
 resource "aws_ecr_repository" "main" {
-  name = var.prefix
+  name         = var.prefix
   force_delete = true
 
   tags = {

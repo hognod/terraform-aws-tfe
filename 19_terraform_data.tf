@@ -22,12 +22,12 @@ resource "terraform_data" "public_bastion" {
   }
 
   provisioner "file" {
-    source = "${path.module}/config/nginx.conf"
+    source      = "${path.module}/config/nginx.conf"
     destination = "/home/${var.instance_user}/nginx.conf"
   }
 
   provisioner "file" {
-    source = "${path.module}/config/terraform-bundle.hcl"
+    source      = "${path.module}/config/terraform-bundle.hcl"
     destination = "/home/${var.instance_user}/terraform-bundle.hcl"
   }
 
@@ -42,26 +42,8 @@ resource "terraform_data" "public_bastion" {
       # # prerequisites
       "chmod 400 ~/${var.prefix}.pem",
 
-      # # Kube config
-      # "aws eks update-kubeconfig --region ${var.region} --name ${aws_eks_cluster.main.name}",
-
-      # # Create TFE Namespace.
-      # "kubectl create namespace ${var.tfe_kube_namespace}",
-
-      # # Secrets
-      # "kubectl create secret docker-registry terraform-enterprise --namespace ${var.tfe_kube_namespace} --docker-server=images.releases.hashicorp.com --docker-username=terraform --docker-password=${var.tfe_license}",
-      # "kubectl create secret generic tfe-secrets --namespace=${var.tfe_kube_namespace} --from-file=TFE_LICENSE=$(pwd)/terraform.hclic --from-literal=TFE_ENCRYPTION_PASSWORD=hashicorp --from-literal=TFE_DATABASE_PASSWORD=${var.db_password}",
-      # "kubectl create secret tls tfe-certs --namespace=${var.tfe_kube_namespace} --cert=$(pwd)/cert/cert.pem --key=$(pwd)/cert/key.pem",
-
-      # # AWS Load Balancer Controller deployment
-      # "helm repo add eks https://aws.github.io/eks-charts",
-      # "helm repo update eks",
-      # "timeout 60 helm install aws-load-balancer-controller eks/aws-load-balancer-controller --namespace ${var.tfe_lb_controller_kube_namespace} --set clusterName=${aws_eks_cluster.main.name} --set serviceAccount.create=true --set serviceAccount.name=${var.tfe_lb_controller_kube_svc_account} --set serviceAccount.annotations.\"eks\\.amazonaws\\.com/role-arn\"=${aws_iam_role.lb_controller_irsa_role.arn} --set region=${var.region} --set vpcId=${aws_vpc.main.id} || exit 0",
-      # "sleep 60s",
-
       # # Terraform Enterprise deployment
-      # "helm repo add hashicorp https://helm.releases.hashicorp.com",
-      # "timeout 180 helm install terraform-enterprise hashicorp/terraform-enterprise --namespace ${var.tfe_kube_namespace} --values terraform.yaml || exit 0",
+      # "helm install terraform-enterprise hashicorp/terraform-enterprise --namespace ${var.tfe_kube_namespace} --values terraform.yaml || exit 0",
       # "sleep 180s",
 
       # # TFE Agent Service Account
@@ -125,10 +107,20 @@ resource "terraform_data" "private_bastion" {
     destination = "/home/${var.instance_user}/terraform-agent-sa.yaml"
   }
 
+  provisioner "file" {
+    content     = yamlencode(local.bundle_yaml)
+    destination = "/home/${var.instance_user}/bundle.yaml"
+  }
+
+  provisioner "remote-exec" {
+    script = "./scripts/private.sh"
+  }
+
   provisioner "remote-exec" {
     inline = [
       "aws ecr get-login-password --region ${var.region} | docker login --username AWS --password-stdin ${aws_ecr_repository.main.repository_url}",
 
+      #################### Image ####################
       # AWS Load Balancer Controller
       "docker load -i ~/aws-load-balancer-controller.tar",
       "docker tag $(docker images public.ecr.aws/eks/aws-load-balancer-controller --format \"{{.Repository}}:{{.Tag}}\") ${aws_ecr_repository.main.repository_url}:aws-load-balancer-controller",
@@ -161,7 +153,33 @@ resource "terraform_data" "private_bastion" {
       "docker load -i ~/nginx-bundle.tar",
       "docker tag nginx:bundle ${aws_ecr_repository.main.repository_url}:bundle",
       "docker push ${aws_ecr_repository.main.repository_url}:bundle",
-      "rm -rf ~/nginx-bundle.tar"
+      "rm -rf ~/nginx-bundle.tar",
+
+
+      #################### Helm Chart ####################
+      "aws eks update-kubeconfig --region ${var.region} --name ${aws_eks_cluster.main.name}",
+
+      # AWS Load Balancer Controller
+      "helm install aws-load-balancer-controller ~/aws-load-balancer-controller-*.tgz --namespace ${var.tfe_lb_controller_kube_namespace} --values ~/aws-load-balancer-controller.yaml",
+      "sleep 30s",
+
+      # Terraform Enterprise
+      ## Create TFE Namespace.
+      "kubectl create namespace ${var.tfe_kube_namespace}",
+
+      ## Secrets
+      "kubectl create secret docker-registry terraform-enterprise --namespace ${var.tfe_kube_namespace} --docker-server=${split("/", aws_ecr_repository.main.repository_url)[0]} --docker-username=AWS --docker-password=$(aws ecr get-login-password --region ${var.region})",
+      "kubectl create secret generic tfe-secrets --namespace=${var.tfe_kube_namespace} --from-file=TFE_LICENSE=/home/${var.instance_user}/terraform.hclic --from-literal=TFE_ENCRYPTION_PASSWORD=hashicorp --from-literal=TFE_DATABASE_PASSWORD=${var.db_password}",
+      "kubectl create secret tls tfe-certs --namespace=${var.tfe_kube_namespace} --cert=/home/${var.instance_user}/cert/cert.pem --key=/home/${var.instance_user}/cert/key.pem",
+
+      "helm install terraform-enterprise terraform-enterprise-*.tgz --namespace ${var.tfe_kube_namespace} --values ~/terraform.yaml",
+      "sleep 30s",
+
+      # TFE Agent
+      "kubectl create --namespace ${var.tfe_kube_namespace}-agents -f ~/terraform-agent-sa.yaml",
+
+      # Bundle
+      "kubectl apply -f ~/bundle.yaml"
     ]
   }
 }

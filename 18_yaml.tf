@@ -116,4 +116,90 @@ locals {
       }
     }
   }
+
+  bundle_yaml = [
+    {
+      apiVersion = "apps/v1"
+      kind       = "Deployment"
+      metadata = {
+        name      = "bundle"
+        namespace = var.tfe_kube_namespace
+        labels = {
+          app = "terraform-providers"
+        }
+      }
+      spec = {
+        replicas = 1
+        selector = {
+          matchLabels = {
+            app = "terraform-providers"
+          }
+        }
+        template = {
+          metadata = {
+            labels = {
+              app = "terraform-providers"
+            }
+          }
+          spec = {
+            containers = [
+              {
+                name  = "bundle"
+                image = "${aws_ecr_repository.main.repository_url}:bundle"
+                ports = [
+                  {
+                    containerPort = 8080
+                    name          = "http"
+                    protocol      = "TCP"
+                  }
+                ]
+                livenessProbe = {
+                  httpGet = {
+                    path = "/health"
+                    port = 8080
+                  }
+                  initialDelaySeconds = 10
+                  periodSeconds       = 10
+                }
+                readinessProbe = {
+                  httpGet = {
+                    path = "/health"
+                    port = 8080
+                  }
+                  initialDelaySeconds = 5
+                  periodSeconds       = 5
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      apiVersion = "v1"
+      kind       = "Service"
+      metadata = {
+        name      = "bundle"
+        namespace = var.tfe_kube_namespace
+        labels = {
+          app = "terraform-providers"
+        }
+      }
+      spec = {
+        type = "ClusterIP"
+        selector = {
+          app = "terraform-providers"
+        }
+        ports = [
+          {
+            port       = 8080
+            targetPort = 8080
+            protocol   = "TCP"
+            name       = "http"
+          }
+        ]
+        sessionAffinity = "None"
+      }
+    }
+  ]
 }

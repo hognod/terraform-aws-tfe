@@ -332,32 +332,32 @@ resource "aws_security_group" "node_group" {
 
 resource "aws_vpc_security_group_ingress_rule" "node_group_53_tcp" {
   security_group_id = aws_security_group.node_group.id
-  
-  from_port         = 53
-  to_port           = 53
-  ip_protocol          = "TCP"
+
+  from_port                    = 53
+  to_port                      = 53
+  ip_protocol                  = "TCP"
   referenced_security_group_id = aws_security_group.node_group.id
-  description = "Allow TCP/53 (CoreDNS) inbound between nodes in node group."
+  description                  = "Allow TCP/53 (CoreDNS) inbound between nodes in node group."
 }
 
 resource "aws_vpc_security_group_ingress_rule" "node_group_53_udp" {
   security_group_id = aws_security_group.node_group.id
-  
-  from_port         = 53
-  to_port           = 53
-  ip_protocol          = "UDP"
+
+  from_port                    = 53
+  to_port                      = 53
+  ip_protocol                  = "UDP"
   referenced_security_group_id = aws_security_group.node_group.id
-  description = "Allow UDP/53 (CoreDNS) inbound between nodes in node group."
+  description                  = "Allow UDP/53 (CoreDNS) inbound between nodes in node group."
 }
 
 resource "aws_vpc_security_group_ingress_rule" "node_group_ephemeral" {
   security_group_id = aws_security_group.node_group.id
-  
-  from_port         = 1025
-  to_port           = 65535
-  ip_protocol          = "TCP"
+
+  from_port                    = 1025
+  to_port                      = 65535
+  ip_protocol                  = "TCP"
   referenced_security_group_id = aws_security_group.node_group.id
-  description = "Allow TCP/1025-TCP/65535 (ephemeral ports) inbound between nodes in node group."
+  description                  = "Allow TCP/1025-TCP/65535 (ephemeral ports) inbound between nodes in node group."
 }
 
 ############### Elasticache ###############

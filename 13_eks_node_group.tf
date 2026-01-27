@@ -96,6 +96,6 @@ resource "aws_launch_template" "main" {
   }
 
   tags = {
-    Name = "${var.prefix}-node-group"
+    Name = "${var.prefix}-launch-template"
   }
 }
