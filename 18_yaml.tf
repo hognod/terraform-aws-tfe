@@ -1,6 +1,8 @@
 locals {
   aws_load_balancer_controller_yaml = {
     clusterName = aws_eks_cluster.main.name
+    region      = var.region
+    vpcId       = aws_vpc.main.id
 
     image = {
       repository = aws_ecr_repository.main.repository_url
@@ -13,9 +15,6 @@ locals {
       annotations = {
         "eks.amazonaws.com/role-arn" = aws_iam_role.lb_controller_irsa_role.arn
       }
-
-      region = var.region
-      vpcId  = aws_vpc.main.id
     }
   }
 
