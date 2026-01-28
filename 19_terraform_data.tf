@@ -159,28 +159,28 @@ resource "terraform_data" "private_bastion" {
       #################### Helm Chart ####################
       "aws eks update-kubeconfig --region ${var.region} --name ${aws_eks_cluster.main.name}",
 
-      # AWS Load Balancer Controller
-      "helm install aws-load-balancer-controller ~/aws-load-balancer-controller-*.tgz --namespace ${var.tfe_lb_controller_kube_namespace} --values ~/aws-load-balancer-controller.yaml",
-      "kubectl wait --for=condition=available deployment/aws-load-balancer-controller -n ${var.tfe_lb_controller_kube_namespace} --timeout=300s",
-      "until kubectl get endpoints aws-load-balancer-webhook-service -n ${var.tfe_lb_controller_kube_namespace} -o jsonpath='{.subsets[0].addresses[0].ip}' 2>/dev/null | grep -q .; do echo 'Waiting for webhook endpoint...'; sleep 5; done",
+      # # AWS Load Balancer Controller
+      # "helm install aws-load-balancer-controller ~/aws-load-balancer-controller-*.tgz --namespace ${var.tfe_lb_controller_kube_namespace} --values ~/aws-load-balancer-controller.yaml",
+      # "kubectl wait --for=condition=available deployment/aws-load-balancer-controller -n ${var.tfe_lb_controller_kube_namespace} --timeout=300s",
+      # "until kubectl get endpoints aws-load-balancer-webhook-service -n ${var.tfe_lb_controller_kube_namespace} -o jsonpath='{.subsets[0].addresses[0].ip}' 2>/dev/null | grep -q .; do echo 'Waiting for webhook endpoint...'; sleep 5; done",
 
-      # Terraform Enterprise
-      ## Create TFE Namespace.
-      "kubectl create namespace ${var.tfe_kube_namespace}",
+      # # Terraform Enterprise
+      # ## Create TFE Namespace.
+      # "kubectl create namespace ${var.tfe_kube_namespace}",
 
-      ## Secrets
-      "kubectl create secret docker-registry terraform-enterprise --namespace ${var.tfe_kube_namespace} --docker-server=${split("/", aws_ecr_repository.main.repository_url)[0]} --docker-username=AWS --docker-password=$(aws ecr get-login-password --region ${var.region})",
-      "kubectl create secret generic tfe-secrets --namespace=${var.tfe_kube_namespace} --from-file=TFE_LICENSE=/home/${var.instance_user}/terraform.hclic --from-literal=TFE_ENCRYPTION_PASSWORD=hashicorp --from-literal=TFE_DATABASE_PASSWORD=${var.db_password}",
-      "kubectl create secret tls tfe-certs --namespace=${var.tfe_kube_namespace} --cert=/home/${var.instance_user}/cert/cert.pem --key=/home/${var.instance_user}/cert/key.pem",
+      # ## Secrets
+      # "kubectl create secret docker-registry terraform-enterprise --namespace ${var.tfe_kube_namespace} --docker-server=${split("/", aws_ecr_repository.main.repository_url)[0]} --docker-username=AWS --docker-password=$(aws ecr get-login-password --region ${var.region})",
+      # "kubectl create secret generic tfe-secrets --namespace=${var.tfe_kube_namespace} --from-file=TFE_LICENSE=/home/${var.instance_user}/terraform.hclic --from-literal=TFE_ENCRYPTION_PASSWORD=hashicorp --from-literal=TFE_DATABASE_PASSWORD=${var.db_password}",
+      # "kubectl create secret tls tfe-certs --namespace=${var.tfe_kube_namespace} --cert=/home/${var.instance_user}/cert/cert.pem --key=/home/${var.instance_user}/cert/key.pem",
 
-      "helm install terraform-enterprise terraform-enterprise-*.tgz --namespace ${var.tfe_kube_namespace} --values ~/terraform.yaml",
-      "sleep 60s",
+      # "helm install terraform-enterprise terraform-enterprise-*.tgz --namespace ${var.tfe_kube_namespace} --values ~/terraform.yaml",
+      # "sleep 60s",
 
-      # TFE Agent
-      "kubectl create --namespace ${var.tfe_kube_namespace}-agents -f ~/terraform-agent-sa.yaml",
+      # # TFE Agent
+      # "kubectl create --namespace ${var.tfe_kube_namespace}-agents -f ~/terraform-agent-sa.yaml",
 
-      # Bundle
-      "kubectl apply -f ~/bundle.yaml"
+      # # Bundle
+      # "kubectl apply -f ~/bundle.yaml"
     ]
   }
 }
