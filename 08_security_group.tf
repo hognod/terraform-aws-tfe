@@ -259,6 +259,7 @@ resource "aws_security_group" "eks-cluster" {
 resource "aws_security_group" "node_group" {
   name   = "${var.prefix}-node-group"
   vpc_id = aws_vpc.main.id
+  revoke_rules_on_delete = true
 
   ingress {
     from_port = 8446
