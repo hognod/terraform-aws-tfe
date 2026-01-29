@@ -174,9 +174,12 @@ resource "terraform_data" "private_bastion" {
       "kubectl create secret tls tfe-certs --namespace=${var.tfe_kube_namespace} --cert=/home/${var.instance_user}/cert/cert.pem --key=/home/${var.instance_user}/cert/key.pem",
 
       "helm install terraform-enterprise terraform-enterprise-*.tgz --namespace ${var.tfe_kube_namespace} --values ~/terraform.yaml",
-      "sleep 60s",
+
+      # Wait for service external IP (NLB ready)
+      "until kubectl get svc terraform-enterprise -n ${var.tfe_kube_namespace} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null | grep -q .; do echo 'Waiting for external IP...'; sleep 10; done",
 
       # TFE Agent
+      "kubectl create namespace ${var.tfe_kube_namespace}-agents",
       "kubectl create --namespace ${var.tfe_kube_namespace}-agents -f ~/terraform-agent-sa.yaml",
 
       # Bundle

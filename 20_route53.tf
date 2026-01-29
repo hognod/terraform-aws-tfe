@@ -13,26 +13,26 @@ resource "aws_route53_zone" "private" {
 }
 
 # Data source to get the NLB created by AWS Load Balancer Controller
-data "aws_lb" "tfe" {
-  name = var.tfe_lb_name
+# data "aws_lb" "tfe" {
+#   name = var.tfe_lb_name
 
-  depends_on = [
-    terraform_data.private_bastion
-  ]
-}
+#   depends_on = [
+#     terraform_data.private_bastion
+#   ]
+# }
 
-# Route53 record for TFE
-resource "aws_route53_record" "tfe" {
-  zone_id = aws_route53_zone.private.zone_id
-  name    = var.tfe_domain
-  type    = "A"
+# # Route53 record for TFE
+# resource "aws_route53_record" "tfe" {
+#   zone_id = aws_route53_zone.private.zone_id
+#   name    = var.tfe_domain
+#   type    = "A"
 
-  alias {
-    name                   = data.aws_lb.tfe.dns_name
-    zone_id                = data.aws_lb.tfe.zone_id
-    evaluate_target_health = true
-  }
-}
+#   alias {
+#     name                   = data.aws_lb.tfe.dns_name
+#     zone_id                = data.aws_lb.tfe.zone_id
+#     evaluate_target_health = true
+#   }
+# }
 
 # Route53 record for GitLab
 resource "aws_route53_record" "gitlab" {
