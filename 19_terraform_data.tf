@@ -239,7 +239,11 @@ resource "terraform_data" "gitlab" {
 
 resource "terraform_data" "destroy" {
   depends_on = [
-    terraform_data.private_bastion
+    terraform_data.private_bastion,
+    aws_eks_cluster.main,
+    aws_eks_node_group.main,
+    aws_eks_access_entry.bastion,
+    aws_eks_access_policy_association.bastion
   ]
 
   input = {
