@@ -256,13 +256,13 @@ resource "terraform_data" "destroy" {
   }
 
   connection {
-    bastion_host        = self.output.bastion_host
-    bastion_user        = self.output.user
-    bastion_private_key = self.output.private_key
+    bastion_host        = self.input.bastion_host
+    bastion_user        = self.input.user
+    bastion_private_key = self.input.private_key
 
-    host        = self.output.host
-    user        = self.output.user
-    private_key = self.output.private_key
+    host        = self.input.host
+    user        = self.input.user
+    private_key = self.input.private_key
 
     timeout = "2m"
   }
@@ -272,16 +272,16 @@ resource "terraform_data" "destroy" {
     on_failure = continue
     inline = [
       # Delete Terraform Enterprise and wait for NLB removal
-      "helm delete terraform-enterprise --namespace ${self.output.tfe_kube_namespace} || true",
+      "helm delete terraform-enterprise --namespace ${self.input.tfe_kube_namespace} || true",
       "echo 'Waiting for NLB to be removed...'",
-      "until ! kubectl get svc terraform-enterprise -n ${self.output.tfe_kube_namespace} 2>/dev/null | grep -q LoadBalancer; do echo 'NLB still exists...'; sleep 10; done",
+      "until ! kubectl get svc terraform-enterprise -n ${self.input.tfe_kube_namespace} 2>/dev/null | grep -q LoadBalancer; do echo 'NLB still exists...'; sleep 10; done",
       "echo 'Waiting for TFE pods to terminate...'",
-      "kubectl wait --for=delete pod -l app=terraform-enterprise -n ${self.output.tfe_kube_namespace} --timeout=300s || true",
+      "kubectl wait --for=delete pod -l app=terraform-enterprise -n ${self.input.tfe_kube_namespace} --timeout=300s || true",
 
       # Delete AWS Load Balancer Controller and wait for cleanup
-      "helm delete aws-load-balancer-controller --namespace ${self.output.tfe_lb_controller_kube_namespace} || true",
+      "helm delete aws-load-balancer-controller --namespace ${self.input.tfe_lb_controller_kube_namespace} || true",
       "echo 'Waiting for AWS LB Controller pods to terminate...'",
-      "kubectl wait --for=delete pod -l app.kubernetes.io/name=aws-load-balancer-controller -n ${self.output.tfe_lb_controller_kube_namespace} --timeout=120s || true",
+      "kubectl wait --for=delete pod -l app.kubernetes.io/name=aws-load-balancer-controller -n ${self.input.tfe_lb_controller_kube_namespace} --timeout=120s || true",
       "echo 'Helm cleanup completed.'"
     ]
   }
