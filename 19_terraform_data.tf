@@ -179,7 +179,6 @@ resource "terraform_data" "private_bastion" {
       "until kubectl get svc terraform-enterprise -n ${var.tfe_kube_namespace} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null | grep -q .; do echo 'Waiting for external IP...'; sleep 10; done",
 
       # TFE Agent
-      "kubectl create namespace ${var.tfe_kube_namespace}-agents",
       "kubectl create --namespace ${var.tfe_kube_namespace}-agents -f ~/terraform-agent-sa.yaml",
 
       # Bundle
@@ -238,52 +237,48 @@ resource "terraform_data" "gitlab" {
   }
 }
 
+resource "terraform_data" "destroy" {
+  depends_on = [
+    terraform_data.private_bastion
+  ]
 
+  input = {
+    tfe_kube_namespace               = var.tfe_kube_namespace
+    tfe_lb_controller_kube_namespace = var.tfe_lb_controller_kube_namespace
+    bastion_host                     = aws_instance.public_bastion.public_ip
+    host                             = aws_instance.private_bastion.private_ip
+    user                             = var.instance_user
+    private_key                      = tls_private_key.main.private_key_pem
+  }
 
+  connection {
+    bastion_host        = self.output.bastion_host
+    bastion_user        = self.output.user
+    bastion_private_key = self.output.private_key
 
+    host        = self.output.host
+    user        = self.output.user
+    private_key = self.output.private_key
 
+    timeout = "2m"
+  }
 
+  provisioner "remote-exec" {
+    when       = destroy
+    on_failure = continue
+    inline = [
+      # Delete Terraform Enterprise and wait for NLB removal
+      "helm delete terraform-enterprise --namespace ${self.output.tfe_kube_namespace} || true",
+      "echo 'Waiting for NLB to be removed...'",
+      "until ! kubectl get svc terraform-enterprise -n ${self.output.tfe_kube_namespace} 2>/dev/null | grep -q LoadBalancer; do echo 'NLB still exists...'; sleep 10; done",
+      "echo 'Waiting for TFE pods to terminate...'",
+      "kubectl wait --for=delete pod -l app=terraform-enterprise -n ${self.output.tfe_kube_namespace} --timeout=300s || true",
 
-
-
-
-
-
-
-
-
-
-# resource "terraform_data" "destroy" {
-#   depends_on = [
-#     aws_eks_node_group.main,
-#     aws_eks_access_entry.bastion,
-#     aws_eks_access_policy_association.bastion
-#   ]
-
-#   input = {
-#     tfe_kube_namespace               = var.tfe_kube_namespace
-#     tfe_lb_controller_kube_namespace = var.tfe_lb_controller_kube_namespace
-#     host                             = aws_instance.bastion.public_ip
-#     user                             = var.instance_user
-#     private_key                      = tls_private_key.main.private_key_pem
-#   }
-
-#   connection {
-#     host        = self.output.host
-#     user        = self.output.user
-#     private_key = self.output.private_key
-
-#     timeout = "2m"
-#   }
-
-#   provisioner "remote-exec" {
-#     when       = destroy
-#     on_failure = continue
-#     inline = [
-#       "helm delete terraform-enterprise --namespace ${self.output.tfe_kube_namespace}",
-#       "sleep 30s",
-#       "helm delete aws-load-balancer-controller --namespace ${self.output.tfe_lb_controller_kube_namespace}",
-#       "sleep 30s"
-#     ]
-#   }
-# }
+      # Delete AWS Load Balancer Controller and wait for cleanup
+      "helm delete aws-load-balancer-controller --namespace ${self.output.tfe_lb_controller_kube_namespace} || true",
+      "echo 'Waiting for AWS LB Controller pods to terminate...'",
+      "kubectl wait --for=delete pod -l app.kubernetes.io/name=aws-load-balancer-controller -n ${self.output.tfe_lb_controller_kube_namespace} --timeout=120s || true",
+      "echo 'Helm cleanup completed.'"
+    ]
+  }
+}
