@@ -152,6 +152,7 @@ resource "aws_security_group" "gitlab" {
     to_port   = 443
     protocol  = "TCP"
     cidr_blocks = [
+      aws_subnet.public-a.cidr_block,
       aws_subnet.private-a.cidr_block,
       aws_subnet.private-c.cidr_block
     ]
