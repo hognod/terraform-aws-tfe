@@ -8,3 +8,5 @@
 # terraformrc file
 terraform.rc
 .terrafaormrc
+
+.DS_Store

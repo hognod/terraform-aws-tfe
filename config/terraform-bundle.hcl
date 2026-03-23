@@ -26,4 +26,16 @@ providers {
   external = {
     versions = ["= 2.3.5"]
   }
+
+  helm = {
+    versions = ["= 3.1.1"]
+  }
+
+  kubernetes = {
+    versions = ["= 3.0.1"]
+  }
+  
+  random = {
+    versions = ["= 3.8.1"]
+  }
 }
