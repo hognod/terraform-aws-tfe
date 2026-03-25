@@ -249,6 +249,8 @@ resource "terraform_data" "destroy" {
   input = {
     tfe_kube_namespace               = var.tfe_kube_namespace
     tfe_lb_controller_kube_namespace = var.tfe_lb_controller_kube_namespace
+    tfe_lb_name                      = var.tfe_lb_name
+    region                           = var.region
     bastion_host                     = aws_instance.public_bastion.public_ip
     host                             = aws_instance.private_bastion.private_ip
     user                             = var.instance_user
@@ -271,17 +273,30 @@ resource "terraform_data" "destroy" {
     when       = destroy
     on_failure = continue
     inline = [
-      # Delete Terraform Enterprise and wait for NLB removal
+      # Step 1: NLB를 AWS CLI로 직접 삭제 (Controller의 Shield 등 VPC endpoint 없는 API 타임아웃 우회)
+      "echo 'Deleting NLB directly via AWS CLI...'",
+      "NLB_ARN=$(aws elbv2 describe-load-balancers --names ${self.input.tfe_lb_name} --region ${self.input.region} --query 'LoadBalancers[0].LoadBalancerArn' --output text 2>/dev/null || true)",
+      "if [ -n \"$NLB_ARN\" ] && [ \"$NLB_ARN\" != \"None\" ]; then",
+      "  echo \"Found NLB: $NLB_ARN\"",
+      "  for TG_ARN in $(aws elbv2 describe-target-groups --load-balancer-arn \"$NLB_ARN\" --region ${self.input.region} --query 'TargetGroups[*].TargetGroupArn' --output text 2>/dev/null); do",
+      "    aws elbv2 delete-target-group --target-group-arn \"$TG_ARN\" --region ${self.input.region} 2>/dev/null || true",
+      "  done",
+      "  aws elbv2 delete-load-balancer --load-balancer-arn \"$NLB_ARN\" --region ${self.input.region}",
+      "  echo 'Waiting for NLB to be deleted...'",
+      "  aws elbv2 wait load-balancers-deleted --load-balancer-arns \"$NLB_ARN\" --region ${self.input.region}",
+      "  echo 'NLB deleted.'",
+      "else",
+      "  echo 'NLB not found, skipping.'",
+      "fi",
+
+      # Step 2: TFE helm release 삭제 (NLB가 이미 없으므로 Controller 정리 대기 불필요)
       "helm delete terraform-enterprise --namespace ${self.input.tfe_kube_namespace} || true",
-      "echo 'Waiting for NLB to be removed...'",
-      "until ! kubectl get svc terraform-enterprise -n ${self.input.tfe_kube_namespace} 2>/dev/null | grep -q LoadBalancer; do echo 'NLB still exists...'; sleep 10; done",
-      "echo 'Waiting for TFE pods to terminate...'",
       "kubectl wait --for=delete pod -l app=terraform-enterprise -n ${self.input.tfe_kube_namespace} --timeout=300s || true",
 
-      # Delete AWS Load Balancer Controller and wait for cleanup
+      # Step 3: AWS Load Balancer Controller 삭제
       "helm delete aws-load-balancer-controller --namespace ${self.input.tfe_lb_controller_kube_namespace} || true",
-      "echo 'Waiting for AWS LB Controller pods to terminate...'",
       "kubectl wait --for=delete pod -l app.kubernetes.io/name=aws-load-balancer-controller -n ${self.input.tfe_lb_controller_kube_namespace} --timeout=120s || true",
+
       "echo 'Helm cleanup completed.'"
     ]
   }
