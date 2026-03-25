@@ -618,7 +618,7 @@ resource "aws_iam_role" "assume_role" {
   name = "${var.prefix}-assume-role"
   path = "/"
 
-  assume_role_policy = data.aws_iam_policy_document.agent_irsa_trust_relationship.json
+  assume_role_policy = data.aws_iam_policy_document.assume_role_trust_relationship.json
 }
 
 # AdministratorAccess
