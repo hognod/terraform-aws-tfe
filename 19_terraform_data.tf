@@ -194,7 +194,7 @@ data "template_file" "gitlab" {
     gitlab_domain = var.gitlab_domain
     cert_path     = "/home/${var.instance_user}/cert/service.crt"
     key_path      = "/home/${var.instance_user}/cert/service.key"
-    temp_password = "temp_password"
+    gitlab_password = var.gitlab_password
   }
 }
 

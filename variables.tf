@@ -128,3 +128,7 @@ variable "tfe_domain" {
 variable "gitlab_domain" {
   type = string
 }
+
+variable "gitlab_password" {
+  type = string
+}
