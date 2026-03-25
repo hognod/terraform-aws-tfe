@@ -254,6 +254,9 @@ resource "terraform_data" "destroy" {
   input = {
     tfe_kube_namespace               = var.tfe_kube_namespace
     tfe_lb_controller_kube_namespace = var.tfe_lb_controller_kube_namespace
+    tfe_lb_name                      = var.tfe_lb_name
+    region                           = var.region
+    eks_cluster_name                 = aws_eks_cluster.main.name
     bastion_host                     = aws_instance.public_bastion.public_ip
     host                             = aws_instance.private_bastion.private_ip
     user                             = var.instance_user
@@ -277,17 +280,16 @@ resource "terraform_data" "destroy" {
     on_failure = continue
     inline = [
       # kubeconfig 갱신 (destroy 시점에 만료됐을 수 있으므로)
-      "aws eks update-kubeconfig --region ${var.region} --name ${var.prefix}-eks-cluster",
+      "aws eks update-kubeconfig --region ${self.input.region} --name ${self.input.eks_cluster_name}",
 
       # NLB 직접 삭제 (aws-load-balancer-controller의 Shield 등 미지원 API 타임아웃 우회)
-      # var.* 는 destroy 실행 시에도 workspace 변수로 항상 제공되므로 input에 넣을 필요 없음
-      "NLB_ARN=$(aws elbv2 describe-load-balancers --names ${var.tfe_lb_name} --region ${var.region} --query 'LoadBalancers[0].LoadBalancerArn' --output text 2>/dev/null || true)",
+      "NLB_ARN=$(aws elbv2 describe-load-balancers --names ${self.input.tfe_lb_name} --region ${self.input.region} --query 'LoadBalancers[0].LoadBalancerArn' --output text 2>/dev/null || true)",
       "if [ -n \"$NLB_ARN\" ] && [ \"$NLB_ARN\" != \"None\" ]; then",
       "  echo \"Deleting NLB: $NLB_ARN\"",
-      "  TG_ARNS=$(aws elbv2 describe-target-groups --load-balancer-arn \"$NLB_ARN\" --region ${var.region} --query 'TargetGroups[*].TargetGroupArn' --output text 2>/dev/null || true)",
-      "  aws elbv2 delete-load-balancer --load-balancer-arn \"$NLB_ARN\" --region ${var.region}",
-      "  aws elbv2 wait load-balancers-deleted --load-balancer-arns \"$NLB_ARN\" --region ${var.region}",
-      "  for TG_ARN in $TG_ARNS; do aws elbv2 delete-target-group --target-group-arn \"$TG_ARN\" --region ${var.region} || true; done",
+      "  TG_ARNS=$(aws elbv2 describe-target-groups --load-balancer-arn \"$NLB_ARN\" --region ${self.input.region} --query 'TargetGroups[*].TargetGroupArn' --output text 2>/dev/null || true)",
+      "  aws elbv2 delete-load-balancer --load-balancer-arn \"$NLB_ARN\" --region ${self.input.region}",
+      "  aws elbv2 wait load-balancers-deleted --load-balancer-arns \"$NLB_ARN\" --region ${self.input.region}",
+      "  for TG_ARN in $TG_ARNS; do aws elbv2 delete-target-group --target-group-arn \"$TG_ARN\" --region ${self.input.region} || true; done",
       "  echo 'NLB deleted.'",
       "else",
       "  echo 'NLB not found, skipping.'",
