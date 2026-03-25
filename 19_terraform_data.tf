@@ -243,14 +243,17 @@ resource "terraform_data" "destroy" {
     aws_eks_cluster.main,
     aws_eks_node_group.main,
     aws_eks_access_entry.bastion,
-    aws_eks_access_policy_association.bastion
+    aws_eks_access_policy_association.bastion,
+    # destroy 프로비저너에서 AWS CLI로 NLB를 직접 삭제하므로
+    # 해당 API 호출에 필요한 VPC endpoint들이 프로비저너 실행 중 삭제되지 않도록 의존성 추가
+    aws_vpc_endpoint.elb, # aws elbv2 명령
+    aws_vpc_endpoint.eks, # aws eks update-kubeconfig 명령
+    aws_vpc_endpoint.sts, # AWS 인증 토큰
   ]
 
   input = {
     tfe_kube_namespace               = var.tfe_kube_namespace
     tfe_lb_controller_kube_namespace = var.tfe_lb_controller_kube_namespace
-    tfe_lb_name                      = var.tfe_lb_name
-    region                           = var.region
     bastion_host                     = aws_instance.public_bastion.public_ip
     host                             = aws_instance.private_bastion.private_ip
     user                             = var.instance_user
@@ -273,32 +276,26 @@ resource "terraform_data" "destroy" {
     when       = destroy
     on_failure = continue
     inline = [
-      # Step 1: NLB를 AWS CLI로 직접 삭제 (Controller의 Shield 등 VPC endpoint 없는 API 타임아웃 우회)
-      "echo 'Deleting NLB directly via AWS CLI...'",
-      "NLB_ARN=$(aws elbv2 describe-load-balancers --names ${self.input.tfe_lb_name} --region ${self.input.region} --query 'LoadBalancers[0].LoadBalancerArn' --output text 2>/dev/null || true)",
+      # kubeconfig 갱신 (destroy 시점에 만료됐을 수 있으므로)
+      "aws eks update-kubeconfig --region ${var.region} --name ${var.prefix}-eks-cluster",
+
+      # NLB 직접 삭제 (aws-load-balancer-controller의 Shield 등 미지원 API 타임아웃 우회)
+      # var.* 는 destroy 실행 시에도 workspace 변수로 항상 제공되므로 input에 넣을 필요 없음
+      "NLB_ARN=$(aws elbv2 describe-load-balancers --names ${var.tfe_lb_name} --region ${var.region} --query 'LoadBalancers[0].LoadBalancerArn' --output text 2>/dev/null || true)",
       "if [ -n \"$NLB_ARN\" ] && [ \"$NLB_ARN\" != \"None\" ]; then",
-      "  echo \"Found NLB: $NLB_ARN\"",
-      "  TG_ARNS=$(aws elbv2 describe-target-groups --load-balancer-arn \"$NLB_ARN\" --region ${self.input.region} --query 'TargetGroups[*].TargetGroupArn' --output text 2>/dev/null)",
-      "  aws elbv2 delete-load-balancer --load-balancer-arn \"$NLB_ARN\" --region ${self.input.region}",
-      "  echo 'Waiting for NLB to be deleted...'",
-      "  aws elbv2 wait load-balancers-deleted --load-balancer-arns \"$NLB_ARN\" --region ${self.input.region}",
-      "  echo 'NLB deleted. Deleting target groups...'",
-      "  for TG_ARN in $TG_ARNS; do",
-      "    aws elbv2 delete-target-group --target-group-arn \"$TG_ARN\" --region ${self.input.region} 2>/dev/null || true",
-      "  done",
+      "  echo \"Deleting NLB: $NLB_ARN\"",
+      "  TG_ARNS=$(aws elbv2 describe-target-groups --load-balancer-arn \"$NLB_ARN\" --region ${var.region} --query 'TargetGroups[*].TargetGroupArn' --output text 2>/dev/null || true)",
+      "  aws elbv2 delete-load-balancer --load-balancer-arn \"$NLB_ARN\" --region ${var.region}",
+      "  aws elbv2 wait load-balancers-deleted --load-balancer-arns \"$NLB_ARN\" --region ${var.region}",
+      "  for TG_ARN in $TG_ARNS; do aws elbv2 delete-target-group --target-group-arn \"$TG_ARN\" --region ${var.region} || true; done",
+      "  echo 'NLB deleted.'",
       "else",
       "  echo 'NLB not found, skipping.'",
       "fi",
 
-      # Step 2: TFE helm release 삭제 (NLB가 이미 없으므로 Controller 정리 대기 불필요)
+      # Helm release 삭제
       "helm delete terraform-enterprise --namespace ${self.input.tfe_kube_namespace} || true",
-      "kubectl wait --for=delete pod -l app=terraform-enterprise -n ${self.input.tfe_kube_namespace} --timeout=300s || true",
-
-      # Step 3: AWS Load Balancer Controller 삭제
       "helm delete aws-load-balancer-controller --namespace ${self.input.tfe_lb_controller_kube_namespace} || true",
-      "kubectl wait --for=delete pod -l app.kubernetes.io/name=aws-load-balancer-controller -n ${self.input.tfe_lb_controller_kube_namespace} --timeout=120s || true",
-
-      "echo 'Helm cleanup completed.'"
     ]
   }
 }

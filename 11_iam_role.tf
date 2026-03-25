@@ -91,7 +91,10 @@ resource "aws_iam_role_policy_attachment" "bastion_ecr_policy_attachment" {
   policy_arn = aws_iam_policy.private_bastion_ecr_policy.arn
 }
 
-//ELBv2 Cleanup (destroy 시 NLB 직접 삭제용)
+############### ELBv2 Cleanup ###############
+# aws-load-balancer-controller는 폐쇄망에서 Shield 등 VPC endpoint 미지원 API를 호출하다
+# 타임아웃이 발생해 NLB를 정상적으로 삭제하지 못함.
+# terraform destroy 시 private bastion에서 AWS CLI로 NLB를 직접 삭제하기 위해 추가.
 data "aws_iam_policy_document" "private_bastion_elb_cleanup_policy" {
   statement {
     effect = "Allow"
