@@ -91,6 +91,33 @@ resource "aws_iam_role_policy_attachment" "bastion_ecr_policy_attachment" {
   policy_arn = aws_iam_policy.private_bastion_ecr_policy.arn
 }
 
+//ELBv2 Cleanup (destroy 시 NLB 직접 삭제용)
+data "aws_iam_policy_document" "private_bastion_elb_cleanup_policy" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "elasticloadbalancing:DescribeLoadBalancers",
+      "elasticloadbalancing:DeleteLoadBalancer",
+      "elasticloadbalancing:DescribeTargetGroups",
+      "elasticloadbalancing:DeleteTargetGroup",
+      "elasticloadbalancing:DescribeListeners",
+      "elasticloadbalancing:DeleteListener",
+      "elasticloadbalancing:DescribeTags"
+    ]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_policy" "private_bastion_elb_cleanup_policy" {
+  name   = "${var.prefix}-bastion-elb-cleanup-policy"
+  policy = data.aws_iam_policy_document.private_bastion_elb_cleanup_policy.json
+}
+
+resource "aws_iam_role_policy_attachment" "bastion_elb_cleanup_policy_attachment" {
+  role       = aws_iam_role.private_bastion_role.name
+  policy_arn = aws_iam_policy.private_bastion_elb_cleanup_policy.arn
+}
+
 ############### EKS Cluster ###############
 data "aws_iam_policy_document" "eks_cluster_assume_role" {
   statement {

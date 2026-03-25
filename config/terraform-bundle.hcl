@@ -42,6 +42,7 @@ providers {
   }
   
   opensearch = {
-    versions = ["= 2.2.0"]
+    source  = "opensearch-project/opensearch"
+    versions = ["= 2.3.2"]
   }
 }
